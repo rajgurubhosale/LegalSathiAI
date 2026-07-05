@@ -134,7 +134,7 @@ class BNSSChunker:
         """Decide how many child chunks to split a section into based on token count."""
         token_count = self._count_tokens(text)
         for i in range(1, 10):
-            if token_count / i < 400:
+            if token_count / i < 450:
                 return i
         return 1
     
@@ -174,30 +174,30 @@ class BNSSChunker:
         return splitter.split_text(md_text)
     
     def _make_child_chunks(self, doc: str) -> list[str]:
-            """Split section text into child chunks based on token size.
-            doc: single doc page from docs
-            
-            """
-            num_splits    = self._decide_chunk_count(doc)
-            sentence_chunks = doc.split('\n')
+        """Split section text into child chunks based on token size.
+        doc: single doc page from docs
+        
+        """
+        num_splits    = self._decide_chunk_count(doc)
+        sentence_chunks = doc.split('\n')
 
-            if num_splits > 1:
-                chunk_size = math.floor(len(sentence_chunks) / num_splits)
-                raw_chunks = [
-                    sentence_chunks[i: i + chunk_size]
-                    for i in range(0, len(sentence_chunks), chunk_size)
-                ]
-                
-                children = []
-                
-                for chunk in raw_chunks:
-                    joined  = ' '.join(chunk)
-                    cleaned = self._clean_child_text(joined)
-                    children.append(cleaned)
-                return children
-            else:
-                return [self._clean_child_text(doc)]  
-                
+        if num_splits > 1:
+            chunk_size = math.floor(len(sentence_chunks) / num_splits)
+            raw_chunks = [
+                sentence_chunks[i: i + chunk_size]
+                for i in range(0, len(sentence_chunks), chunk_size)
+            ]
+            
+            children = []
+            
+            for chunk in raw_chunks:
+                joined  = ' '.join(chunk)
+                cleaned = self._clean_child_text(joined)
+                children.append(cleaned)
+            return children
+        else:
+            return [self._clean_child_text(doc)]  
+            
     def _build_parent_chunks(self, docs: list) -> dict:
         """Build parent-child chunk structure from markdown docs."""
         

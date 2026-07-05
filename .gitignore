@@ -1,0 +1,9 @@
+.env
+logs
+legalAI/   
+legal_sathi_ai.egg-info    
+
+data
+__pycache__/
+
+docs

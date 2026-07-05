@@ -1,0 +1,17 @@
+[project]
+name = "legal-sathi-ai"
+version = "0.0.1"
+description = "AI Legal Assistant using RAG"
+authors = [{name = "Rajguru Bhosale", email = "bhosalerajguru007@gmail.com"}]
+dependencies = [
+    "langchain-text-splitters>=1.1.2",
+]
+
+
+[tool.setuptools]
+packages = {find = {}}
+
+
+
+[tool.setuptools.dynamic]
+dependencies = {file = "requirements.txt"}

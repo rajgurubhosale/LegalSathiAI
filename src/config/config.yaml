@@ -1,0 +1,44 @@
+paths:
+
+
+  # source pdf
+  pdf_paths:
+    bns: "D:/LegalSaathi AI/data/pdfs/BNS2023.pdf"
+    bnss: "D:/LegalSaathi AI/data/pdfs/CrPC_2023.pdf"
+
+  
+  # split PDFs by section
+  splits: 
+    bnss:
+      first_section: "D:/LegalSaathi AI/data/splits/bnss/first_section.pdf"
+      second_section: "D:/LegalSaathi AI/data/splits/bnss/second_section.pdf"
+    bns:
+      first_section: "D:/LegalSaathi AI/data/splits/bns/first_section.pdf"
+      second_section: "D:/LegalSaathi AI/data/splits/bns/second_section.pdf"
+
+  # intermediate files for debugging
+  interim:
+    bns:
+      main: "D:/LegalSaathi AI/data/interim/bns/main.md"
+    bnss:
+      sections_cropped: "D:/LegalSaathi AI/data/interim/bnss/sections_cropped.md"
+
+      sections:         "D:/LegalSaathi AI/data/interim/bnss/sections.md"
+
+  # final cleaned data ready for chunking
+  final:
+    bns:
+      first_section:  "D:/LegalSaathi AI/data/output/bns/first_section.json"
+      second_section: "D:/LegalSaathi AI/data/output/bns/second_section.md"
+    bnss:
+      sections: "D:/LegalSaathi AI/data/output/bnss/sections.md"
+      tables:   "D:/LegalSaathi AI/data/output/bnss/final_cleaned_df.csv"
+
+
+  chunks:
+    bns:
+      first_section: "D:/LegalSaathi AI/data/chunks/bns/first_section.json"
+      second_section: "D:/LegalSaathi AI/data/chunks/bns/second_section.json"
+    bnss:
+      sections: "D:/LegalSaathi AI/data/chunks/bnss/sections.json"
+      tables:   "D:/LegalSaathi AI/data/chunks/bnss/tables.json"

@@ -10,6 +10,10 @@ the Bharatiya Nyaya Sanhita and Bharatiya Nagarik Suraksha Sanhita in plain lang
 
 
 ## 🔭 What I'm Building
-- End-to-end RAG pipeline with hybrid retrieval (BM25 + vector search)
-- Parent-child chunking strategy that respects legal section boundaries
+- Production-grade RAG pipeline with hybrid retrieval (BM25 + vector search)
 - FastAPI backend for serving legal queries
+
+
+## 📌 Status
+🚧 Active Development
+

@@ -1,5 +1,6 @@
 .env
 logs
+notebooks/
 legalAI/   
 legal_sathi_ai.egg-info    
 

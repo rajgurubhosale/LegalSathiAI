@@ -33,7 +33,6 @@ class BNSChunker:
         """Remove noise characters from chunk text."""
         text = text.replace('\n\n', ' ')
         text = text.replace('\n', ' ')
-        text = text.replace('_', '')
         text = text.replace('.–', ' ')
         text = text.replace('.—', ' ')
         text = re.sub(r' +', ' ', text)
@@ -78,7 +77,7 @@ class BNSChunker:
                 
                 children.append({
                     "child_text": child_text,
-                    "parent_id":  f'BNS_{section_num}',
+                    "parent_id": section_num,
                     "metadata":   data["metadata"]
                 })
 
@@ -331,6 +330,7 @@ class BNSSChunker:
 class Pipeline:
     
     def __init__(self):
+        logger.info('Chunking pipelien initialized')
         self.config  = read_config_file()
 
         self.bns_chunker = BNSChunker()  
@@ -361,10 +361,18 @@ class Pipeline:
 
 
     def run(self) -> None:
-       
-        self._chunk_bns()     
-        self._chunk_bnss()
-
+        
+        try:
+            logger.info('Chunking Started')
+            self._chunk_bns()     
+            logger.info("BNS chunking completed")
+            self._chunk_bnss()
+            logger.info("BNSS chunking completed")
+            
+            logger.info("Pipeline finished successfully")        
+        except Exception as e:
+            logger.critical('Chunking Pipeline Failed')
+            raise MyException(e,sys)
 
 if __name__ == '__main__':
     runner = Pipeline()

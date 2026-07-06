@@ -34,7 +34,7 @@ paths:
       sections: "D:/LegalSaathi AI/data/output/bnss/sections.md"
       tables:   "D:/LegalSaathi AI/data/output/bnss/final_cleaned_df.csv"
 
-
+  # chunking output path
   chunks:
     bns:
       first_section: "D:/LegalSaathi AI/data/chunks/bns/first_section.json"
@@ -42,3 +42,9 @@ paths:
     bnss:
       sections: "D:/LegalSaathi AI/data/chunks/bnss/sections.json"
       tables:   "D:/LegalSaathi AI/data/chunks/bnss/tables.json"
+
+
+
+embedding:
+  model_name: "BAAI/bge-base-en-v1.5"
+  db_path:    "D:/LegalSaathi AI/data/vectordb/chroma"

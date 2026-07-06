@@ -133,7 +133,11 @@ class BNSSChunker:
     def _decide_chunk_count(self, text: str) -> int:
         """Decide how many child chunks to split a section into based on token count."""
         token_count = self._count_tokens(text)
-        for i in range(1, 10):
+        
+        if token_count <= 450:
+            return 1
+        
+        for i in range(2, 10):
             if token_count / i < 450:
                 return i
         return 1
@@ -183,6 +187,10 @@ class BNSSChunker:
 
         if num_splits > 1:
             chunk_size = math.floor(len(sentence_chunks) / num_splits)
+            
+            if chunk_size == 0:
+                return [self._clean_child_text(doc)]
+            
             raw_chunks = [
                 sentence_chunks[i: i + chunk_size]
                 for i in range(0, len(sentence_chunks), chunk_size)
@@ -197,6 +205,21 @@ class BNSSChunker:
             return children
         else:
             return [self._clean_child_text(doc)]  
+        
+    def _build_child_chunks(self, parent_data: dict) -> list:
+        """Flatten parent chunks into child chunks for embedding."""
+        children = []
+        for section_num, data in parent_data.items():
+            for child_text in data["children"]:
+                child_text = child_text.strip()
+                if not child_text:
+                    continue
+                children.append({
+                    "child_text": child_text,
+                    "parent_id":  data["parent_id"],
+                    "metadata":   data["metadata"]
+                })
+        return children    
             
     def _build_parent_chunks(self, docs: list) -> dict:
         """Build parent-child chunk structure from markdown docs."""
@@ -233,6 +256,7 @@ class BNSSChunker:
 
         return parent_data
 
+    
     def chunk_first_section(self, input_path: str, output_path: str) -> None:
         """Full chunking pipeline — read MD, chunk, save JSON."""
         logger.info(f"Chunking BNSS file: {input_path}")
@@ -242,14 +266,19 @@ class BNSSChunker:
 
         docs        = self._split_markdown(md_text)
         parent_data = self._build_parent_chunks(docs)
+        children    = self._build_child_chunks(parent_data)  # ← add this
+
+        result = {
+            "parent_data": parent_data,
+            "children":    children       # ← same as BNS
+        }
 
         ensure_path(output_path)
         with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(parent_data, f, ensure_ascii=False, indent=2)
+            json.dump(result, f, ensure_ascii=False, indent=2)
 
-        logger.info(f"Saved {len(parent_data)} parent chunks to {output_path}")
-    
-    
+        logger.info(f"Saved {len(children)} child chunks to {output_path}")
+        
     def _load_and_clean_csv(self, input_path: str) -> pd.DataFrame:
         """Load CSV, drop header row, replace Ditto values."""
         df = pd.read_csv(input_path)
@@ -283,7 +312,7 @@ class BNSSChunker:
         ])
 
         return {
-            "chunk_text": f"{header}. {rows_text}",
+            "full_text": f"{header}. {rows_text}",
             "parent_id":  'shedule_1_end',
             "metadata": {
                 "act":        "BNSS",
@@ -300,7 +329,7 @@ class BNSSChunker:
         chunks = []
         for _, row in df_clean.iterrows():
             chunks.append({
-                "chunk_text": row['chunk_text'],
+                "full_text": row['chunk_text'],
                 "parent_id":  f"BNSS_schedule_1_{row['Section']}",
                 "metadata": {
                     "act":        "BNSS",

@@ -43,7 +43,7 @@ class Retrieval:
     
     def retrieve(self,user_query):
         try: 
-            return self.retrieve.invoke(user_query)
+            return self.retriever.invoke(user_query)
         except Exception as e:
             raise MyException(e,sys)
 

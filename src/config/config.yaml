@@ -47,4 +47,8 @@ paths:
 
 embedding:
   model_name: "BAAI/bge-base-en-v1.5"
+  db_name: "legalsaathi"
   db_path:    "D:/LegalSaathi AI/data/vectordb/chroma"
+  
+retrieval:
+  top_k: 10

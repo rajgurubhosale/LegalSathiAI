@@ -28,6 +28,12 @@ class BNSChunker:
             strip_headers=True
         )
         return splitter.split_text(md_text)
+    
+    def _count_tokens(self, text: str) -> int:
+        """Count tokens in text using tiktoken."""
+        encoding = tiktoken.get_encoding("cl100k_base")
+        return len(encoding.encode(text))
+
 
     def _clean_text(self, text: str) -> str:
         """Remove noise characters from chunk text."""
@@ -39,6 +45,23 @@ class BNSChunker:
         # remove ----- pattern
         text = re.sub(r'-{2,}', ' ', text)
         return text.strip()
+
+    def _make_child_chunks(self,text):
+        """
+        - if section is <= MAX_PARENT_TOKENS tokens: don't split at all
+        - if it's over toknes and contains an _Explanation_/_Illustration_
+        split it into child sections
+
+        """
+        if self._count_tokens(text) <= 450:
+            return [text]
+
+        pieces =  re.split(r'(?=_Explanation_|_Illustrations_|_Illustration_)', text)
+        if len(pieces)> 1:
+            return pieces
+        else:
+            return [text]
+        
 
     def _build_parent_chunks(self, docs: list) -> dict:
         """Build parent chunks keyed by section number."""
@@ -62,8 +85,9 @@ class BNSChunker:
             parent_data[parent_id] = {
                 "full_text": text,
                 "metadata": doc.metadata,   # chapter, chapter_title, section_title
-                "children": re.split(r'(?=_Explanation_|_Illustration_)', text)
+                "children":self._make_child_chunks(text)
             }
+            
 
         return parent_data
 

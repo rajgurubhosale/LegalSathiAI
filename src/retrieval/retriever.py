@@ -13,6 +13,7 @@ class Retrieval:
             self.top_k  = self.config['retrieval']['top_k']
             self.embed_model = self._load_model()
             self.vectorstore = self._load_vector_db()
+            
             self.retriever = self.vectorstore.as_retriever(
                 search_kwargs={"k": self.top_k}
             )
@@ -36,9 +37,21 @@ class Retrieval:
         collection = Chroma(
             collection_name=self.config['embedding']['db_name'],
             embedding_function=self.embed_model,
-            persist_directory  = self.config['embedding']['db_path']   
+            persist_directory=self.config['embedding']['db_path']
         )
-        return collection 
+        
+        count = collection._collection.count()
+        
+        if count == 0:
+            logger.error(
+                f"Vector store '{self.config['embedding']['db_name']}' "
+                f"at {self.config['embedding']['db_path']} is empty (0 vectors)"
+            )
+            raise MyException("Vector store is empty", sys)
+        
+        logger.info(f"Vector store loaded with {count} vectors")
+        
+        return collection
     
     
     def retrieve(self,user_query):

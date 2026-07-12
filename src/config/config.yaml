@@ -52,3 +52,6 @@ embedding:
   
 retrieval:
   top_k: 10
+
+rerank:
+  cross_encoder_model_name: "cross-encoder/ms-marco-MiniLM-L-6-v2"

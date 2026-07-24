@@ -173,7 +173,6 @@ class BNSChunker:
                 
 class BNSSChunker:
     """Chunks cleaned BNSS markdown into parent-child structure."""
-    
 
     HEADERS = [
         ("#",   "chapter"),
@@ -197,7 +196,7 @@ class BNSSChunker:
         for i in range(2, 10):
             if token_count / i < 450:
                 return i
-        return 9
+        return 1
     
     def _clean_child_text(self, text: str) -> str:
         """Remove noise from child chunk text."""
@@ -269,9 +268,7 @@ class BNSSChunker:
         parent_data = {}
         child_data = {}
 
-        i = 0
         for doc in docs:
-            i+=1
             text = doc.page_content.strip()
 
             if not text or len(text) < 20:
@@ -283,11 +280,11 @@ class BNSSChunker:
             if match:
                 section_num = match.group(1)
             else:
+                # fallback to metadata section_data if available
                 section_num = doc.metadata.get("section_data") or \
                             doc.metadata.get("chapter_title") or \
                             "unknown"
-                section_num = f"{section_num}_{i}"   # always append i when falling back
-                
+
             parent_id = f'BNSS_{section_num}'
 
             doc.metadata['act'] = 'BNSS'
@@ -337,121 +334,71 @@ class BNSSChunker:
 
         logger.info(f"Saved BNSS sections chunks to {output_path}")
         
-    
-    def _clean_common(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Strip <br> tags and normalize Ditto markers to NaN (shared by both tables)."""
-        df = df.replace(r'<br\s*/?>', ' ', regex=True)
-        df = df.replace({'Ditto': np.nan, 'Ditto.': np.nan})
-        return df
-
-    def _load_main_table(self, input_path: str) -> pd.DataFrame:
-        """Load + clean the main BNSS schedule table CSV."""
+    def _load_and_clean_csv(self, input_path: str) -> pd.DataFrame:
+        """Load CSV, drop header row, replace Ditto values."""
         df = pd.read_csv(input_path)
-        df = self._clean_common(df)
-
-        # Section/Offence span multiple physical rows in the source table
-        df['Section'] = df['Section'].ffill()
-        df['Offence'] = df['Offence'].ffill()
-
-        # Fill any remaining Ditto-derived gaps down the columns
-        df = df.ffill()
+        df = df.drop(index=0).reset_index(drop=True)
+        df.replace({'Ditto': np.nan, 'Ditto.': np.nan}, inplace=True)
+        df.ffill(inplace=True)
         return df
     
-    def _load_other_laws(self, input_path: str) -> pd.DataFrame:
-        """Load + clean the 'offences against other laws' CSV."""
-        df = pd.read_csv(input_path)
-        if 'Section' in df.columns:
-            df = df.drop(columns=['Section'])
-        df = self._clean_common(df)
-        df = df.ffill()
-        return df
-    
-    def _merge_column_values(self,values: pd.Series) -> str:
-        cleaned = values.astype(str).replace('nan', '').replace('<NA>', '')
-        non_empty = [v.strip() for v in cleaned if v.strip()]
-        unique_values = list(dict.fromkeys(non_empty))  # dedupe, preserve order
-        return ' '.join(unique_values)
-
-    def _merge_group(self, group: pd.DataFrame) -> pd.Series:
-        """Merge one Section's rows into a single row."""
-        merged = {'Section': group.name}
-        COLS_TO_MERGE = ['Offence', 'Punishment', 'Cognizable', 'Bailable', 'Court']
-
-        for col in COLS_TO_MERGE:
-            merged[col] = self._merge_column_values(group[col])
-        return pd.Series(merged)
-
-    def _merge_duplicate_sections(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Collapse multi-row sections (split by <br>) into one row per Section."""
-        return (
-            df.groupby('Section', sort=False)
-            .apply(self._merge_group)
-            .reset_index(drop=True)
-        )
-        
-        
-      # ---------- row -> chunk text ----------
-
     def _row_to_chunk(self, row: pd.Series) -> str:
-        """Convert a merged main-table row into chunk text."""
+        """Convert single table row to readable chunk text."""
         return (
             f"Section {row['Section']}: "
             f"{row['Offence']}. "
             f"Punishment: {row['Punishment']}. "
-            f"Cognizable: {row['Cognizable']}. "
-            f"Bailable: {row['Bailable']}. "
-            f"Triable by: {row['Court']}"
+            f"Cognizable: {row['Cognizable or non- cognizable']}. "
+            f"Bailable: {row['Bailable or Non- bailable']}. "
+            f"Triable by: {row['By what Court triable']}"
         )
 
-    def _row_to_chunk_general(self, row: pd.Series) -> str:
-        """Convert an 'other laws' row (no Section number) into chunk text."""
-        return (
-            f"Offence: {row['Offence']}. "
-            f"Cognizable: {row['Cognizable']}. "
-            f"Bailable: {row['Bailable']}. "
-            f"Triable by: {row['Court']}"
-        )
-        
-        
-    
-    # ---------- building parent/child chunks ----------
+    def _build_table_chunks(self, df: pd.DataFrame) -> dict:
+        """Build parent + children chunks from schedule table (main rows + other-laws block),
+        same structure as section chunks: parent_data / children_data keyed by parent_id."""
 
-    def _build_main_table_chunks(self, merged_df: pd.DataFrame) -> tuple:
-        """Build parent_data/children_data for the main table, one entry per Section."""
         parent_data = {}
-        children_data = {}
+        child_data = {}
 
-        merged_df = merged_df.copy()
-        merged_df['chunk_text'] = merged_df.apply(self._row_to_chunk, axis=1)
+        # --- main table rows (0:343) ---
+        df_clean = df.iloc[:343].copy().reset_index(drop=True)
+        df_clean['chunk_text'] = df_clean.apply(self._row_to_chunk, axis=1)
 
-        for _, row in merged_df.iterrows():
+        for _, row in df_clean.iterrows():
             parent_id = f"BNSS_schedule_1_{row['Section']}"
             text = row['chunk_text']
 
             metadata = {
-                "act": "BNS",
+                "act": "BNSS",
                 "source_act": "BNS",
-                "schedule_source": "BNSS Schedule I",
                 "section": str(row['Section']),
                 "type": "schedule_1",
                 "parent_id": parent_id
             }
 
-            parent_data[parent_id] = {"full_text": text}
-            children_data[parent_id] = {"children": [text], "metadata": metadata}
+            parent_data[parent_id] = {
+                "full_text": text
+            }
 
-        return parent_data, children_data
+            child_data[parent_id] = {
+                "children": [text],          # single self-contained row, always a list
+                "metadata": metadata
+            }
 
-    def _build_other_laws_chunk(self, other_df: pd.DataFrame) -> tuple:
-        """Build a single combined parent/child chunk for the 'other laws' block."""
+        # --- "other laws" block (345:347) ---
         header = "I. CLASSIFICATION OF OFFENCES AGAINST OTHER LAWS"
+        df_other = df.iloc[345:347].copy().reset_index(drop=True)
 
-        other_df = other_df.copy()
-        other_df['chunk_text'] = other_df.apply(self._row_to_chunk_general, axis=1)
-        
-        rows_text = " | ".join(other_df['chunk_text'].tolist())
+        rows_text = " | ".join([
+            f"{row.iloc[2]}: "  
+            f"Cognizable: {row.iloc[3]}. "
+            f"Bailable: {row.iloc[4]}. "
+            f"Court: {row.iloc[5]}"
+            for _, row in df_other.iterrows()
+        ])
+
         other_text = f"{header}. {rows_text}"
-        other_parent_id = "BNSS_schedule_1_end"
+        other_parent_id = 'BNSSschedule_1_end'
 
         other_metadata = {
             "act": "BNSS",
@@ -460,41 +407,35 @@ class BNSSChunker:
             "parent_id": other_parent_id
         }
 
-        parent_entry = {other_parent_id: {"full_text": other_text}}
-        child_entry = {
-            other_parent_id: {"children": [other_text], "metadata": other_metadata}
+        parent_data[other_parent_id] = {
+            "full_text": other_text
         }
-        return parent_entry, child_entry
 
-    # ---------- pipeline entrypoint ----------
+        child_data[other_parent_id] = {
+            "children": [other_text],
+            "metadata": other_metadata
+        }
 
-    def chunk_second_section(
-        self, main_table_path: str, other_laws_path: str, output_path: str
-    ) -> None:
-        """Full pipeline: load both CSVs, clean, merge, chunk, save JSON.
+        return {
+            'parent_data': parent_data,
+            'children_data': child_data
+        }
 
-        Output structure matches the original: {"parent_data": {...}, "children_data": {...}}
-        """
-        logger.info(f"Chunking BNSS main table: {main_table_path}")
-        main_df = self._load_main_table(main_table_path)
-        merged_df = self._merge_duplicate_sections(main_df)
-        parent_data, children_data = self._build_main_table_chunks(merged_df)
+    def chunk_second_section(self, input_path: str, output_path: str) -> None:
+        """Full chunking pipeline — load CSV, chunk, save JSON."""
+        logger.info(f"Chunking BNSS table: {input_path}")
 
-        logger.info(f"Chunking BNSS other-laws table: {other_laws_path}")
-        other_df = self._load_other_laws(other_laws_path)
-        other_parent, other_child = self._build_other_laws_chunk(other_df)
-        parent_data.update(other_parent)
-        children_data.update(other_child)
-
-        final_data = {"parent_data": parent_data, "children_data": children_data}
+        df = self._load_and_clean_csv(input_path)
+        final_data = self._build_table_chunks(df)
 
         ensure_path(output_path)
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(final_data, f, ensure_ascii=False, indent=2)
 
-        logger.info(f"Saved {len(parent_data)} table chunks to {output_path}")
+        parent_count = len(final_data['parent_data'])
+        logger.info(f"Saved {parent_count} table chunks to {output_path}")
         
-
+        
 class Pipeline:
     
     def __init__(self):
@@ -519,15 +460,14 @@ class Pipeline:
         self.bnss_chunker.chunk_first_section(
             input_path  = self.config['paths']['final']['bnss']['sections'],
             output_path = self.config['paths']['chunks']['bnss']['sections']
-        )
-        
-        self.bnss_chunker.chunk_second_section(
-            main_table_path = self.config['paths']['final']['bnss']['tables'],
-            other_laws_path = self.config['paths']['final']['bnss']['other_laws'],
-            output_path      = self.config['paths']['chunks']['bnss']['tables']
-        
+            
         )   
-        
+        self.bnss_chunker.chunk_second_section(
+            input_path  = self.config['paths']['final']['bnss']['tables'],
+            output_path = self.config['paths']['chunks']['bnss']['tables']
+            
+        )   
+
 
     def run(self) -> None:
         

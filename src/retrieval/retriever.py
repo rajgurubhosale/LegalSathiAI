@@ -7,15 +7,15 @@ from src.exception import *
 import sys
 
 class Retrieval:
-    def __init__(self):
+    def __init__(self,top_n):
         try:
             self.config = read_config_file()        
-            self.top_k  = self.config['retrieval']['top_k']
+            self.top_n  = top_n
             self.embed_model = self._load_model()
             self.vectorstore = self._load_vector_db()
             
             self.retriever = self.vectorstore.as_retriever(
-                search_kwargs={"k": self.top_k}
+                search_kwargs={"k": self.top_n}
             )
             
             logger.info(f"Warming up embedding model: {self.config['embedding']['model_name']}")
@@ -54,7 +54,7 @@ class Retrieval:
         return collection
     
     
-    def retrieve(self,user_query):
+    def retrieve_invoke(self,user_query):
         try: 
             return self.retriever.invoke(user_query)
         except Exception as e:

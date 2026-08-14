@@ -4,9 +4,17 @@ notebooks/
 legalAI/   
 legal_sathi_ai.egg-info    
 
-D:/LegalSaathi AI/src/evalutions
-src/evalutions
+# docs
+D:\LegalSaathi AI\docs\project_data.md
+D:\LegalSaathi AI\docs\write_timing_comparison.png
+D:\LegalSaathi AI\docs\image.png
+D:\LegalSaathi AI\docs\evals.md
+D:\LegalSaathi AI\docs\FUTURE_IDEAS.md
+
 data
 __pycache__/
 
-docs
+D:\LegalSaathi AI\new_table_cropped.pdf
+D:\LegalSaathi AI\src\main.py
+D:\LegalSaathi AI\.deepeval
+D:\LegalSaathi AI\.venv

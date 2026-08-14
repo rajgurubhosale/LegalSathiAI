@@ -20,27 +20,29 @@ class Reranker:
         except Exception as e:
             raise MyException(e,sys)
         
-    
-    def _load_parent_json(self):
-        
-        with open(self.config['paths']['parent_store_path'],'r',encoding='utf8') as f:
-            parent_merge_json = json.load(f)
-        
-        return parent_merge_json
+
     
     def _make_pairs_data(self, docs: list, query: str) -> tuple:
         parent_ids = []
         child_chunks = []
         metadatas = []
-        
+        scoring_texts = []
+
         for d in docs:
-            parent_ids.append(d.metadata.get("parent_id"))
-            child_chunks.append(d.page_content.strip())
-            metadatas.append(d.metadata)  
-        
-        pairs = [[query, c] for c in child_chunks]
-        
+            parent_id = d.metadata.get("parent_id")
+            child_text = d.page_content.strip()
+
+            parent_ids.append(parent_id)
+            child_chunks.append(child_text)
+            metadatas.append(d.metadata)
+
+            parent_text = self.parent_store.get(parent_id)
+            scoring_texts.append(parent_text if parent_text else child_text)
+
+        pairs = [[query, t] for t in scoring_texts]
+
         return pairs, parent_ids, child_chunks, metadatas
+        
     
     def _get_top_chunks(self, docs, query):
         pairs, parent_ids, child_chunks, metadatas = self._make_pairs_data(docs, query)
@@ -58,34 +60,23 @@ class Reranker:
         without hardcoding assumptions about which fields are present.
         """
         metadata = metadata or {}
-
         act = metadata.get("act", "")
         section = metadata.get("section", "")
-
         parts = [f"[Source {source_num}] {act} Section {section}".strip()]
 
-        # Preferred, human-readable fields — added in priority order, only if present
         for field, label in [
-            ("section_title", None),          # e.g. "Punishments."
-            ("chapter_title", "Chapter"),      # e.g. "OF PUNISHMENTS"
-            ("type", "Type"),                 # e.g. "schedule_1"
-            ("source_act", "Source Act"),      # e.g. "BNS" (for BNSS schedule rows referencing BNS)
+            ("section_title", None),
+            ("chapter_title", "Chapter"),
+            ("source_act", "Source Act"),
         ]:
             value = metadata.get(field)
             if value:
                 parts.append(f"{label}: {value}" if label else value)
 
-        # Catch-all: any other metadata fields not already used or explicitly suppressed —
-        # future-proofs against schema fields you haven't anticipated
-        suppressed = {"act", "section", "parent_id", "section_title", "chapter_title", "type", "source_act", "chapter", "section_data"}
-        for key, value in metadata.items():
-            if key not in suppressed and value:
-                parts.append(f"{key}: {value}")
-
-        return ", ".join(parts)
-
+        return ", ".join(parts)   # no catch-all loop after this
 
     def rerank_invoke(self, docs, query):
+    
         top_chunks = self._get_top_chunks(docs, query)
 
         context_blocks = []
@@ -93,12 +84,14 @@ class Reranker:
             
             
             text = self.parent_store.get(parent_id) or child_text            
-        
 
             header = self._build_header(metadata, source_num=i + 1)
             context_blocks.append(f"{header}\n{text}")
 
-        return "\n\n".join(context_blocks)
+        output = "\n\n".join(context_blocks)
+        
+        
+        return output,context_blocks
         
     
   

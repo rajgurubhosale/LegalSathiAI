@@ -42,7 +42,7 @@ class ParentStore:
         """Loads and merges all parent data. Call once at startup."""
         
         paths = self._get_paths()
-        output_path = self.config['parent_store_path']
+        output_path = self.config['paths']['parent_store_path']
         
         self._load_and_merge(paths,output_path)
 

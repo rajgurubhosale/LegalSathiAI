@@ -4,9 +4,8 @@ paths:
   # source pdf
   pdf_paths:
     bns: "D:/LegalSaathi AI/data/pdfs/BNS2023.pdf"
-    bnss: "D:/LegalSaathi AI/data/pdfs/CrPC_2023.pdf"
+    bnss: "D:/LegalSaathi AI/data/pdfs/BNSS_NEW.pdf"
 
-  
   # split PDFs by section
   splits: 
     bnss:
@@ -47,13 +46,18 @@ paths:
 
   parent_store_path: "D:/LegalSaathi AI/data/final_parent/merged_final_parent.json"
 
+  eval_golden_dataset: D:/LegalSaathi AI/data/evalutions/gd.csv"
+
 embedding:
-  model_name: "BAAI/bge-base-en-v1.5"
   db_name: "legalsaathi"
   db_path:    "D:/LegalSaathi AI/data/vectordb/chroma"
-  
+  model_name:    "BAAI/bge-base-en-v1.5"
+
+
 retrieval:
   top_k: 10
 
+# "cross-encoder/ms-marco-MiniLM-L-6-v2"
 rerank:
-  cross_encoder_model_name: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+  cross_encoder_model_name: 'cross-encoder/ms-marco-MiniLM-L-12-v2'
+  

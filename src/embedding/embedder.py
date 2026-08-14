@@ -57,7 +57,7 @@ class Embedder:
         """Embed BNS second section parent-child chunks."""
         try:
             
-            chunks     = self._load_chunks(chunk_path)
+            chunks = self._load_chunks(chunk_path)
             
             children_data =chunks['children_data']
             ids = []

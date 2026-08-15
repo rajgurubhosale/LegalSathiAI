@@ -118,7 +118,7 @@ python "D:\LegalSaathi AI\src\retrieval\parent_store.py" # merge parent data
 Once setup is complete, run the interactive chat interface CLI:
 
 ```bash
-python "D:\LegalSaathi AI\src\temp.py"
+python "D:\LegalSaathi AI\src\main.py"
 ```
 
 You'll see:

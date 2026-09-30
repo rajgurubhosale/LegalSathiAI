@@ -1,0 +1,16 @@
+
+embedding:
+  model_name: sentence-transformers/all-MiniLM-L6-v2
+  
+vectorstore:
+  type: Chroma
+  db_name: legal_saathi
+  db_path: 'D:\LegalSaathi AI\vectorstore'
+
+retrieval:
+  top_k: 10
+
+  
+rerank:
+  model_name: 'cross-encoder/ms-marco-MiniLM-L-12-v2'
+  

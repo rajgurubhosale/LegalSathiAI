@@ -9,6 +9,15 @@ from langchain_chroma import Chroma
 from langchain_huggingface import HuggingFaceEmbeddings
 from typing import List
 from pathlib import Path
+import re
+from src.exception import *
+from src.logger import *
+import sys
+import torch
+from dotenv import load_dotenv
+from huggingface_hub import login
+load_dotenv()
+login(token=os.getenv('HF_TOKEN'))
 
 class PdfParser:
     def _build_document_converter(self):
@@ -16,9 +25,13 @@ class PdfParser:
         pipeline_options = PdfPipelineOptions()
 
         pipeline_options.do_ocr = False
-        pipeline_options.do_table_structure = False  # Set True if you need tables
+        pipeline_options.do_table_structure = False  
+        accelerator = AcceleratorDevice.CUDA if torch.cuda.is_available() else AcceleratorDevice.CPU
+
         pipeline_options.accelerator_options = AcceleratorOptions(
-            device=AcceleratorDevice.CUDA
+            device = accelerator
+    
+
         )
 
                 
@@ -61,7 +74,6 @@ class PdfParser:
                 Document(
                     page_content=result.text,
                     metadata={
-                        "source": str(self.file_path),  # Source file path
                         "page": page_no,                 # Page this export belongs to
                         "pages": source_pages or [page_no],  # All contributing PDF pages
                     },
@@ -70,15 +82,27 @@ class PdfParser:
 
         return documents
 
+    def run(self, file_path: Path) -> List[Document]:
+        """Parse a PDF file and return one Document per non-empty page."""
+        
+        document_converter = self._build_document_converter()
+
+        file_path = Path(file_path)
+
+        if not file_path.exists():
+            raise FileNotFoundError(f"PDF not found: {file_path}")
+
+        docling_doc = self._parse_pdf_to_docling(document_converter,file_path)
+
+        return self._serialize_pages_to_documents(docling_doc)
 
 class Chunker:
-
     def __init__(self, chunk_size: int = 800, chunk_overlap: int = 150):
-
-        self.splitter =  RecursiveCharacterTextSplitter(
+        self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
-            separators=["\n\n", "\n", " ", ""]  
+            separators=["\n\n", "\n", ". ", " ", ""],
+            keep_separator="start",
         )
 
 
@@ -95,8 +119,11 @@ class Chunker:
 
             count = page_counters.get(page_key, 0)
             suffix = ascii_lowercase[count] if count < 26 else f"z{count}"  # fallback if >26 chunks on one page
-            
-            doc.metadata["chunk_id"] = f"{pdf_number}_{page_key}{suffix}"
+
+            # Use the filename for chunk identification, along with the page number and suffix
+            doc.metadata["chunk_id"] = (
+                f"{doc.metadata['act_name']}_{page_key}{suffix}"
+            )
             page_counters[page_key] = count + 1
 
         return split_docs
@@ -142,13 +169,15 @@ class VectorStoreManager:
         return self.embedding_model
 
     def add_documents(self, documents):
-        self.store.add_documents(documents)
+        self.store.add_documents(
+            documents,
+            ids=[doc.metadata["chunk_id"] for doc in documents],
+        )
 
     
     def run(self, chunked_docs: List[Document]):
         self.add_documents(chunked_docs)  
             
-
 
 class LegalDocumentIngestionPipeline:
 
@@ -161,21 +190,84 @@ class LegalDocumentIngestionPipeline:
         self.chunker = Chunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
         self.vector_store_manager = VectorStoreManager()
+
+        self.LABOUR_PDFS = {
+                "The Code on Social Security, 2020.pdf",
+                "The Code on Wages, 2019.pdf",
+                "The Industrial Relations Code, 2020.pdf",
+                "The Occupational Safety, Health and Working.pdf"
+            }
+    @staticmethod
+    def clean_text(text: str) -> str:
+        text = text.replace("<!-- image -->", "")
+        text = text.replace("\u00a0", " ")  # Non-breaking space
+
+        # Remove lines consisting only of underscores, including escaped \_
+        text = re.sub(r"(?m)^[ \t]*(?:\\?_[ \t]*){3,}$", "", text)
+
+        text = text.replace("IndiaCode", "")  # Remove standalone IndiaCode watermark
+
+        # Reduce excessive blank lines
+        text = re.sub(r"\n[ \t]*\n(?:[ \t]*\n)+", "\n\n", text)
+
+        return text.strip()
     
-
     def perform_ingestion(self):
+        pdf_files = sorted(self.pdf_folder_path.glob("*.pdf"))
+        total_pdfs = len(pdf_files)
 
-        for pdf_number, pdf_file in enumerate(self.pdf_folder_path.glob("*.pdf"), start=1):
+        for pdf_number, pdf_file in enumerate(pdf_files, start=1):
+            try:
+                logger.info( f"Processing PDF {pdf_number}/{total_pdfs}: {pdf_file.name}")
 
-            # text parsing
-            docling_doc = self.parser._parse_pdf_to_docling(self.document_converter, pdf_file)
-            
-            documents = self.parser._serialize_pages_to_documents(docling_doc) 
+                #Parse PDF
+                docling_doc = self.parser._parse_pdf_to_docling(
+                    self.document_converter, pdf_file
+                )
+
+                #Create page documents 
+                documents = self.parser._serialize_pages_to_documents(docling_doc)
+
+                #Add metadata BEFORE chunking
+                category = ("labour" if pdf_file.name in self.LABOUR_PDFS else "other")
+
+                for doc in documents:
+                    doc.page_content = self.clean_text(doc.page_content)
+                    doc.metadata["category"] = category
+                    doc.metadata["act_name"] = pdf_file.stem
+
+                # Remove documents that became empty after cleaning
+                documents = [doc for doc in documents if doc.page_content]  
+                
+                # 4. Split into chunks; metadata is copied into each chunk
+                chunked_docs = self.chunker.run(documents, pdf_number)
+
+                # 5. Store chunks
+                self.vector_store_manager.run(chunked_docs)
+
+                logger.info(
+                    f"Completed PDF {pdf_number}/{total_pdfs}: {pdf_file.name}"
+                )
+
+            except Exception as e:
+                logger.exception(f"Failed processing PDF: {pdf_file.name}")
+                raise MyException(e, sys) from e
 
 
-            # chunking
-            chunked_docs = self.chunker.run(documents, pdf_number)
+from pathlib import Path
+from src.data_ingestion.ingest_and_chunk import LegalDocumentIngestionPipeline
 
+if __name__ == "__main__":
+    pdf_folder = Path(r"D:\LegalSaathi AI\PDF_DATA")  
 
-            # vector_store put data in db
-            self.vector_store_manager.run(chunked_docs)
+    if not pdf_folder.exists():
+        raise FileNotFoundError(f"PDF folder does not exist: {pdf_folder}")
+
+    pipeline = LegalDocumentIngestionPipeline(
+        pdf_folder_path=pdf_folder,
+        chunk_size=800,
+        chunk_overlap=150
+    )
+
+    pipeline.perform_ingestion()
+    print("Ingestion completed successfully.")

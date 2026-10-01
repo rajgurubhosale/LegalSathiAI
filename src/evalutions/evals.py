@@ -15,8 +15,8 @@ from deepeval.metrics import (
 from deepeval.test_case import LLMTestCase
 from deepeval.models import DeepEvalBaseLLM
 from langchain_openai import ChatOpenAI
+from src.genration_pipeline.pipeline import LegalSaathiPipeline
 
-from src.temp import LegalSaathiPipeline
 
 load_dotenv()
 warnings.filterwarnings("ignore", category=UserWarning)

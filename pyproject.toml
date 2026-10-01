@@ -39,8 +39,13 @@ name = "pytorch-cu130"
 url = "https://download.pytorch.org/whl/cu130"
 explicit = true
 
-[tool.setuptools]
-packages = {find = {}}
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
 
-[tool.setuptools.dynamic]
-dependencies = {file = "requirements.txt"}
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]
+[tool.pyrefly]
+search-path = ["."]
+python-interpreter-path = ".venv/Scripts/python.exe"

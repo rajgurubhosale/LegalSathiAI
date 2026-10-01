@@ -1444,7 +1444,7 @@ wheels = [
 [[package]]
 name = "legal-sathi-ai"
 version = "0.0.1"
-source = { virtual = "." }
+source = { editable = "." }
 dependencies = [
     { name = "chromadb" },
     { name = "deepeval" },

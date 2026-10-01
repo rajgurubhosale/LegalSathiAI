@@ -1,20 +1,18 @@
-# first load the vector db
-# retrivel 
-# reranker
+
 from src.data_ingestion.ingest_and_chunk import *
 from src.utils.main_utils import read_config_file
 from pathlib import Path
-
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 import torch
+
+
 class Retrieval:
 
     def __init__(self, top_n=10):
         try:      
-            path = Path(r"D:\LegalSaathi AI\src\config\config_file.yaml")
 
-            self.config = read_config_file(path)
+            self.config = read_config_file()
             self.top_n  = top_n
 
             self.embedding_model = self._load_model()
@@ -80,11 +78,11 @@ class Retrieval:
 
 class Reranker:
     
-    def __init__(self):
+    def __init__(self,rerank_k:int):
         path = Path(r"D:\LegalSaathi AI\src\config\config_file.yaml")
         
         self.config = read_config_file(path)
-
+        self.rerank_k = rerank_k
         self.reranker_model = self._load_reranker_model()
 
 
@@ -97,7 +95,7 @@ class Reranker:
             )
     
     
-    def rerank(self, docs: list, query: str, top_n: int = 5) -> list:
+    def rerank(self, docs: list, query: str) -> list:
         if not docs:
             return []
 
@@ -114,4 +112,4 @@ class Reranker:
             reverse=True,
         )
 
-        return scored[:top_n]
+        return scored[:self.rerank_k]

@@ -23,7 +23,7 @@ from src.genration_pipeline.pipeline import LegalSaathiPipeline
 load_dotenv()
 warnings.filterwarnings("ignore")
 from pathlib import Path
-
+import time
 
 class MeshJudge(DeepEvalBaseLLM):
     """LangChain ChatOpenAI client (meshapi) wrapped as a deepeval judge."""
@@ -61,7 +61,7 @@ class LegalSaathiEvaluator:
             if not api_key:
                 raise ValueError("MESH_DEEP_SEEK_FLASH is missing from .env")
     
-            self.pipeline = LegalSaathiPipeline(top_n=35, rerank_k=5)
+            self.pipeline = LegalSaathiPipeline(top_n=35, rerank_k=4)
             self.judge = MeshJudge(
                 judge_config["model_name"],
                 judge_config["base_url"],
@@ -84,14 +84,16 @@ class LegalSaathiEvaluator:
         index, row = item
         question = row["question"]
 
-        context = self.pipeline.retrieve_context(question)
+        chunks = self.pipeline.retrieve_context(question, return_chunks=True)
+        context = "\n\n".join(chunks)
+
         output = self.pipeline.generate_answer(
             question=question,
             context=context,
             chat_history=[],
         )
 
-        return index, output["answer"], [context] if context else []
+        return index, output["answer"], chunks
 
     @staticmethod
     def _build_cases(df, generated, expected_col):
@@ -106,65 +108,86 @@ class LegalSaathiEvaluator:
             for index, answer, context in generated
         ]
     
-    def run(self, df: pd.DataFrame, output_path: str | Path):
-        
-        print(f"Generating answers for {len(df)} questions...")
-        with ThreadPoolExecutor(max_workers=self.gen_workers) as executor:
-            generated_answers_and_contexts = list(
-                executor.map(self._generate, df.iterrows())
-            )
-    
-        # After generating answers
-        test_cases = self._build_cases(df,generated_answers_and_contexts,"updated_golden_answer",)
-                
-        metric_options = {"threshold": self.threshold,"model": self.judge,"async_mode": True,}
-
-        metrics = [
-            metric_class(**metric_options)
-            for metric_class in self.metric_classes.values()
-        ]
-        
-        evaluation = evaluate(
-            test_cases=test_cases,
-            metrics=metrics,
-            async_config=AsyncConfig(
-                run_async=True,
-                max_concurrent=self.max_concurrent,
-            ),
-            display_config=DisplayConfig(print_results=False),
-            error_config=ErrorConfig(ignore_errors=True),
-        )
-
-        rows = []
-        for test_result in evaluation.test_results:
-            index = int(test_result.name)
-
-            for metric in test_result.metrics_data or []:
-                rows.append({
-                    "index": index,
-                    "question": df.loc[index, "question"],
-                    "metric": metric.name,
-                    "score": metric.score,
-                    "reason": metric.reason,
-                    "error": metric.error,
-                })
-
-        results = pd.DataFrame(rows)
-        if results.empty:
-            raise RuntimeError("DeepEval returned no metric results.")
-
-        results = results.sort_values(
-            ["index", "metric"]
-        ).reset_index(drop=True)
+    def run(
+        self,
+        df: pd.DataFrame,
+        output_path: str | Path,
+        min_batch_interval: float = 70.0,
+    ):
+        if df.empty:
+            raise ValueError("The evaluation dataset is empty.")
 
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        results.to_csv(output_path, index=False)
+        all_results = []
+        batch_size = 2
 
-        print(f"Saved results to {output_path}")
+        for start in range(0, len(df), batch_size):
+            batch_started = time.monotonic()
+            batch = df.iloc[start:start + batch_size]
+            print(f"Evaluating questions {start + 1}–{start + len(batch)} of {len(df)}")
+
+            with ThreadPoolExecutor(max_workers=self.gen_workers) as executor:
+                generated = list(executor.map(self._generate, batch.iterrows()))
+
+            test_cases = self._build_cases(df, generated, "updated_golden_answer")
+            metric_options = {
+                "threshold": self.threshold,
+                "model": self.judge,
+                "async_mode": True,
+            }
+            metrics = [
+                metric_class(**metric_options)
+                for metric_class in self.metric_classes.values()
+            ]
+
+            evaluation = evaluate(
+                test_cases=test_cases,
+                metrics=metrics,
+                async_config=AsyncConfig(
+                    run_async=True,
+                    max_concurrent=self.max_concurrent,
+                ),
+                display_config=DisplayConfig(print_results=False),
+                error_config=ErrorConfig(ignore_errors=True),
+            )
+
+            rows = []
+            for test_result in evaluation.test_results:
+                index = int(test_result.name)
+                for metric in test_result.metrics_data or []:
+                    rows.append({
+                        "index": index,
+                        "question": df.loc[index, "question"],
+                        "metric": metric.name,
+                        "score": metric.score,
+                        "reason": metric.reason,
+                        "error": metric.error,
+                    })
+
+            batch_results = pd.DataFrame(rows)
+            if batch_results.empty:
+                raise RuntimeError(f"Batch starting at question {start + 1} returned no results.")
+
+            batch_results = batch_results.sort_values(["index", "metric"])
+            batch_results.to_csv(
+                output_path,
+                mode="w" if start == 0 else "a",
+                header=start == 0,
+                index=False,
+            )
+            all_results.append(batch_results)
+            print(f"Saved batch to {output_path}")
+
+            if start + batch_size < len(df):
+                elapsed = time.monotonic() - batch_started
+                pause = max(0.0, min_batch_interval - elapsed)
+                print(f"Waiting {pause:.1f} seconds before the next batch...")
+                time.sleep(pause)
+
+        results = pd.concat(all_results, ignore_index=True)
         print(results.groupby("metric")["score"].mean().round(3))
         print(f"Metric errors: {results['error'].notna().sum()}")
-
         return results
 
     
@@ -174,4 +197,5 @@ if __name__ == "__main__":
 
     df = pd.read_csv(settings["dataset_path"])
     evaluator = LegalSaathiEvaluator(config)
+    output_path = Path(settings["output_path"])
     evaluator.run(df, output_path=settings["output_path"])

@@ -63,7 +63,7 @@ class LegalSaathiPipeline:
             logger.error(f"Query decomposition failed: {e}")
             return [question]
         
-    def retrieve_context(self, question: str) -> str:
+    def retrieve_context(self, question: str, return_chunks: bool = False):
         sub_questions = self.query_decomposition(question)
 
         all_docs = []
@@ -84,19 +84,20 @@ class LegalSaathiPipeline:
                     all_docs.append(doc)
 
         if not all_docs:
-            return ""
-
+            return [] if return_chunks else ""
+        
         scored_docs = self.reranker.rerank(
             docs=all_docs,
             query=question,
         )
 
-        return "\n\n".join(
+        chunks = [
             f"Act: {doc.metadata.get('act_name', 'Unknown')}\n"
             f"PDF pages: {doc.metadata.get('pages', doc.metadata.get('page', 'Unknown'))}\n"
             f"Text:\n{doc.page_content}"
             for score, doc in scored_docs
-        )    
+        ]
+        return chunks if return_chunks else "\n\n".join(chunks)   
    
 
     def generate_answer(self,question: str, context: str, chat_history: list = None) -> dict:

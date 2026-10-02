@@ -7,12 +7,13 @@ import os
 load_dotenv()
 
 
-def get_model(model: str = "gemini-3.1-flash-lite", temperature: float = 0):
+def get_model(model: str = "openai/gpt-oss-120b", temperature: float = 0):
     
-    api_key = os.getenv("GEMINI_API_KEY")
+    keyname = "GROQ_API_KEY"
+    api_key = os.getenv(keyname)
     
     if not api_key:
-        raise ValueError("GEMINI_API_KEY not found in environment.")
+        raise ValueError(f"{keyname} not found in environment.")
     
-    return ChatGoogleGenerativeAI(model=model, api_key=api_key, temperature=temperature)
+    return ChatGroq(model=model, api_key=api_key, temperature=temperature)
 

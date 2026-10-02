@@ -16,13 +16,14 @@ rerank:
 
 
 evaluation:
+
   dataset_path: 'D:\LegalSaathi AI\evalution_set\golden_dataset.csv'
-  output_path: 'D:\LegalSaathi AI\data\evaluations\eval_results.csv'
+  output_path: 'D:\LegalSaathi AI\evalution_set\eval_results.csv'
 
   threshold: 0.7
   top_n: 30
   rerank_k: 7
-  gen_workers: 3
+  gen_workers: 1
   max_concurrent: 5
 
   judge:

@@ -3,25 +3,35 @@ logs
 notebooks/
 legalAI/   
 legal_sathi_ai.egg-info    
-D:\LegalSaathi AI\image.png
+D:/LegalSaathi AI/image.png
 image.png
 write_timing_comparison.png
 project_data.md
 Untitled Diagram (1).drawio
-D:\LegalSaathi AI\src\retrieval\retriver_temp_only_retirver.py
-src\retrieval\retriver_temp_only_retirver.py
+tradeoffs.md
+D:/LegalSaathi AI/src/retrieval/retriver_temp_only_retirver.py
+src/retrieval/retriver_temp_only_retirver.py
 # docs
-D:\LegalSaathi AI\docs\project_data.md
-D:\LegalSaathi AI\docs\write_timing_comparison.png
-D:\LegalSaathi AI\docs\image.png
-D:\LegalSaathi AI\docs\evals.md
-D:\LegalSaathi AI\docs\FUTURE_IDEAS.md
-D:\LegalSaathi AI\docs
+D:/LegalSaathi AI/docs/project_data.md
+D:/LegalSaathi AI/docs/write_timing_comparison.png
+D:/LegalSaathi AI/docs/image.png
+D:/LegalSaathi AI/docs/evals.md
+.deepeval
+evalution_set
+.venv
+frontend
+
+D:/LegalSaathi AI/docs/FUTURE_IDEAS.md
+D:/LegalSaathi AI/docs
 data
+D:/LegalSaathi AI/src/data_ingestion/new_testing_chunking_pipeline.py
+src/data_ingestion/new_testing_chunking_pipeline.py
 vectorstore
 __pycache__/
+src/data_ingestion/new_testing_chunking_pipeline.py
+D:/LegalSaathi AI/new_table_cropped.pdf
+D:/LegalSaathi AI/src/main.py
+D:/LegalSaathi AI/.deepeval
+D:/LegalSaathi AI/.venv
+PDF_DATA
 
-D:\LegalSaathi AI\new_table_cropped.pdf
-D:\LegalSaathi AI\src\main.py
-D:\LegalSaathi AI\.deepeval
-D:\LegalSaathi AI\.venv

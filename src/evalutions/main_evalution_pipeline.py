@@ -61,7 +61,12 @@ class LegalSaathiEvaluator:
             if not api_key:
                 raise ValueError("MESH_DEEP_SEEK_FLASH is missing from .env")
     
-            self.pipeline = LegalSaathiPipeline(top_n=35, rerank_k=4)
+            self.pipeline = LegalSaathiPipeline(
+                top_n=evalution_config["top_n"],
+                rerank_k=evalution_config["rerank_k"],
+                min_score=evalution_config.get("min_score"),
+            )
+
             self.judge = MeshJudge(
                 judge_config["model_name"],
                 judge_config["base_url"],

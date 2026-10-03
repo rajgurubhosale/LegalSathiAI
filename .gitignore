@@ -1,26 +1,44 @@
+# Secrets and environments
 .env
-logs
-notebooks/
-legalAI/   
-legal_sathi_ai.egg-info    
-D:\LegalSaathi AI\image.png
-image.png
-write_timing_comparison.png
-project_data.md
-Untitled Diagram (1).drawio
-D:\LegalSaathi AI\src\retrieval\retriver_temp_only_retirver.py
-src\retrieval\retriver_temp_only_retirver.py
-# docs
-D:\LegalSaathi AI\docs\project_data.md
-D:\LegalSaathi AI\docs\write_timing_comparison.png
-D:\LegalSaathi AI\docs\image.png
-D:\LegalSaathi AI\docs\evals.md
-D:\LegalSaathi AI\docs\FUTURE_IDEAS.md
-D:\LegalSaathi AI\docs
-data
-__pycache__/
+.venv/
+legalAI/
+*.egg-info/
 
-D:\LegalSaathi AI\new_table_cropped.pdf
-D:\LegalSaathi AI\src\main.py
-D:\LegalSaathi AI\.deepeval
-D:\LegalSaathi AI\.venv
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Logs and evaluation artifacts
+/logs/
+/.deepeval/
+/evalution_set/
+/diagnostics/
+
+# Local data and vector stores
+/PDF_DATA/
+/data/
+/vectorstore/
+/vectorstore_*/
+.deepeval
+# Local notebooks and frontend
+/notebook/
+/notebooks/
+/frontend/
+
+# Experimental scripts
+/src/evalutions/full_dataset_evaluator.py
+/src/rag_retrieval/exp.py
+/src/rag_retrieval/original.py
+
+# Local images and notes
+/image.png
+/write_timing_comparison.png
+/project_data.md
+/tradeoffs.md
+/Untitled Diagram (1).drawio
+/new_table_cropped.pdf
+
+# Local documentation artifacts
+/docs/project_data.md
+/docs/write_timing_comparison.png
+/docs/image.png

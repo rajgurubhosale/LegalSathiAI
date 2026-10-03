@@ -1,5 +1,4 @@
 
-
 SYSTEM_PROMPT = """
 You are LegalSaathi, an assistant that explains Indian legal information in clear, natural language.
 

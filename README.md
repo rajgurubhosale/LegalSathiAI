@@ -1,145 +1,251 @@
-# LegalSaathi — Scope & Disclaimer
+# LegalSaathi
 
-LegalSaathi provides general legal information about Indian criminal law under the
-**Bharatiya Nyaya Sanhita (BNS)** and **Bharatiya Nagarik Suraksha Sanhita (BNSS)** only.
+An Indian legal information assistant built with Retrieval-Augmented Generation (RAG). LegalSaathi retrieves evidence from supplied legal PDFs and uses it to answer questions.
 
-## This tool:
-- Explains offences, punishments, and procedures as written in the BNS/BNSS.
-- Cites the exact Section number for every claim it makes.
+## Scope
 
-## This tool does NOT:
-- Provide legal advice for your specific situation or case.
-- Cover other laws (Constitution, civil law, IT Act, family law, etc.).
-- Know your case facts, location, or any currently active legal orders.
-- Predict how a court will rule in any real case.
+The current local corpus includes criminal law, evidence, consumer protection, RTI, RERA, labour laws, information technology and other Indian Acts.
 
-## Example questions you can ask
-- "What is the punishment for theft under BNS?"
-- "Is murder a bailable offence?"
-- "What does 'cognizable' mean?"
-- "Which court handles cases of extortion?"
+Coverage depends on the PDFs available in the configured corpus. The assistant is designed to:
 
-## Example questions outside scope
-- Questions about laws other than BNS/BNSS.
-- Advice specific to your personal situation or an ongoing case.
-- Predictions about how a court will rule.
+- Explain legal provisions in clear language.
+- Answer multiple legal issues within a question.
+- Preserve relevant conditions and exceptions.
+- State when the retrieved evidence is insufficient.
+- Avoid guaranteeing outcomes or inventing compensation amounts.
 
-## Not legal advice
-This is general information only, not a substitute for a licensed advocate.
-For any real legal situation, please consult a qualified lawyer.
+LegalSaathi provides general legal information, not a substitute for advice from a qualified advocate. Answers may be incomplete or incorrect and should be checked against the source documents.
 
----
+## How it works
 
-## Current evaluation metrics
+```text
+Question
+   ↓
+Query decomposition and focused rewriting
+   ↓
+Dense retrieval + BM25
+   ↓
+Reciprocal Rank Fusion (RRF)
+   ↓
+Reranking with Act names
+   ↓
+Minimum-score filtering
+   ↓
+Deduplication and balanced context selection
+   ↓
+Answer generation
+```
 
-Evaluated with DeepEval (contextual precision/recall/relevancy, answer relevancy,
-faithfulness) against a golden-answer test set covering in-scope, general-definition,
-and out-of-scope questions.
+Each search query is retrieved and reranked separately. Final context selection takes candidates from the queries in turns and keeps up to four unique chunks.
 
-| Metric | Score |
+Act names are added to the reranker's input. Generation and evaluation receive the original chunk text.
+
+## Current working baseline — v6
+
+| Component | Setting |
 |---|---|
-| Faithfulness | 0.970 |
-| Answer Relevancy | 0.779 |
-| Recall | 0.662 |
-| Precision | 0.675 |
-| Relevancy | 0.472 |
+| PDF extraction | Docling |
+| Chunking | Page-based recursive splitting |
+| Chunk size | 1200 characters |
+| Chunk overlap | 100 characters |
+| Embedding | `Octen/Octen-Embedding-0.6B` |
+| Vector database | Chroma |
+| Retrieval | Dense 40 + BM25 40 per search query |
+| Fusion | RRF, retaining 40 candidates |
+| Reranker | `Qwen/Qwen3-Reranker-0.6B` |
+| Ranked candidates | Top 6 per search query |
+| Score cutoff | Raw `min_score=0.0` |
+| Final context | Up to 4 unique chunks |
+| Generator | `openai/gpt-oss-120b` through Groq |
+| Evaluation | DeepEval |
+| Evaluation judge | `deepseek/deepseek-v4-flash` through Mesh |
 
+Scores below the cutoff are removed. If every ranked candidate for a query is below the cutoff, its top candidate is retained.
 
----
+Reranker scores are raw logits, not percentages. Setting `min_score` to `null` disables filtering.
 
-## Roadmap / future work
-Working on improvement.
-- Improve reranking so the general sections
-- [ ] Explore hybrid (dense + sparse/BM25) retrieval for exact section-number and
-      keyword matches.
-- [ ] Expand golden-answer eval set beyond the current sample for more reliable,
-      lower-variance metrics.
-- [ ] Expand coverage beyond BNS/BNSS to more Indian acts (e.g. IT Act, Motor Vehicles
-      Act, POCSO, and other commonly referenced laws).
+Automatic previous/next expansion is not part of this baseline.
 
----
+## Evaluation history
+
+Higher scores are better. Bold values are the highest reported score for each metric.
+
+| Version | Approach | Answer Relevancy | Contextual Precision | Contextual Recall | Contextual Relevancy | Faithfulness |
+|---|---|---:|---:|---:|---:|---:|
+| v1 | Original pipeline; no BM25 or neighbour expansion | 0.935 | 0.713 | 0.634 | **0.416** | **0.978** |
+| v2 | Granite Small + Nyaya | 0.918 | 0.762 | 0.703 | 0.407 | 0.954 |
+| v3 | Granite Small + Nyaya; hybrid retrieval and query rewriting | 0.915 | 0.730 | 0.682 | 0.408 | 0.963 |
+| v4 | Granite English + Nyaya; 1500-character chunks; Act name before reranking | **0.952** | 0.835 | 0.819 | 0.370 | 0.935 |
+| v5 | Octen + Qwen; 1200/100 chunks; hybrid 35; no cutoff | 0.943 | 0.833 | **0.843** | 0.361 | 0.945 |
+| v6 | Octen + Qwen; 1200/100 chunks; hybrid 40; rerank 6; cutoff 0.0 | 0.935 | **0.902** | 0.826 | 0.363 | 0.930 |
+
+The v6 run used a 45-question golden dataset and recorded **1 metric error**. Failed metric results do not contribute valid scores to the averages.
+
+These are experiment results, not guarantees of legal accuracy. Several settings changed between versions, so differences cannot always be attributed to one component.
+
+## Project structure
+
+```text
+src/
+├── config/
+│   └── config_file.yaml
+├── data_ingestion/
+│   ├── ingest_and_chunk.py
+│   └── chunking_experiment.py
+├── rag_retrieval/
+│   └── retrival.py
+├── genration_pipeline/
+│   ├── pipeline.py
+│   ├── model.py
+│   ├── new_prompts.py
+│   └── schemas.py
+├── evalutions/
+│   └── main_evalution_pipeline.py
+├── utils/
+│   └── main_utils.py
+├── logger/
+└── exception/
+```
+
+`chunking_experiment.py` is a separate section-aware chunking experiment. It is not used by the v6 baseline.
 
 ## Setup
 
-### 1. Clone and create environment
-```bash
-git clone <your-repo-url>
-cd LegalSaathi-AI
-python -m venv legalAI
-legalAI\Scripts\activate        # Windows
-# source legalAI/bin/activate   # macOS/Linux
+### 1. Requirements
+
+- Python 3.12
+- `uv`
+- Source PDFs
+- A Groq API key for query rewriting and answer generation
+- A Mesh API key for evaluation
+
+Dependencies are declared in `pyproject.toml` and pinned in `uv.lock`.
+
+The project configures PyTorch through a CUDA 13.0 wheel index. Adjust that dependency configuration if your environment needs a different build.
+
+### 2. Clone and install
+
+```powershell
+git clone https://github.com/rajgurubhosale/LegalSathiAI.git
+cd LegalSathiAI
+uv sync
 ```
 
-### 2. Install requirements
-```bash
-pip install -r requirements.txt
+### 3. Configure environment variables
+
+Create `.env` in the project root:
+
+```dotenv
+GROQ_API_KEY=your_groq_api_key
+MESH_DEEP_SEEK_FLASH=your_mesh_api_key
 ```
 
-If you don't have a `requirements.txt` yet, generate one from your working environment:
-```bash
-pip freeze > requirements.txt
+Keep `.env` out of version control.
+
+### 4. Configure local paths
+
+The implementation currently contains Windows paths under:
+
+```text
+D:\LegalSaathi AI
 ```
 
-Core libraries this project depends on:
-```
-pandas
-numpy
-langchain
-langchain-openai
-langchain-huggingface
-langchain-chroma
-langchain-text-splitters
-chromadb
-sentence-transformers
-tiktoken
-python-dotenv
-deepeval
-```
+If your checkout is elsewhere, update the paths in:
 
-### 3. Set environment variables
-Create a `.env` file in the project root:
-```
-GEMINI_API_KEY=your_api_key_here
-MESH_DEEP_SEEK_FLASH=your_api_key_here
+- `src/config/config_file.yaml`
+- `src/utils/main_utils.py`
+- `src/rag_retrieval/retrival.py`
+- `src/data_ingestion/ingest_and_chunk.py`
+
+Place your source PDFs in the configured `PDF_DATA` directory.
+
+PDFs, vector stores, evaluation datasets and result files are local artifacts and are not included in the repository. A fresh checkout requires these inputs and a newly built vector store.
+
+## Build the vector store
+
+Run from the project root:
+
+```powershell
+uv run -m src.data_ingestion.ingest_and_chunk
 ```
 
-### 4. Build the data pipeline (first-time setup only)
-Run in this order — each step depends on the previous one's output:
-```bash
-python "D:\LegalSaathi AI\src\chunking\pipeline.py"      # chunk BNS/BNSS source docs
-python "D:\LegalSaathi AI\src\retrieval\parent_store.py" # merge parent data
-# rebuild your Chroma vectorstore from the new chunks (embedding script)
+The ingestion pipeline extracts PDF text, creates chunks, embeds them and stores them in the configured Chroma collection.
+
+Use the same embedding model for ingestion and retrieval. Changing the embedding model requires a new collection and re-embedding the documents, even when the vector dimensions match.
+
+Use separate collections for chunking and embedding experiments to preserve the baseline.
+
+## Ask a question
+
+Run this in a notebook or Python script using the project environment:
+
+```python
+from src.genration_pipeline.pipeline import LegalSaathiPipeline
+
+pipeline = LegalSaathiPipeline(
+    top_n=40,
+    rerank_k=6,
+    min_score=0.0,
+)
+
+result = pipeline.run(
+    "What remedies are available under RERA when a builder delays possession?"
+)
+
+print(result["answer"])
 ```
 
----
+Reuse the pipeline instance for subsequent questions to avoid repeatedly loading the models.
 
-## Running the CLI
+## Run evaluation
 
-Once setup is complete, run the interactive chat interface CLI:
+### Dataset
 
-```bash
-python "D:\LegalSaathi AI\src\main.py"
+Configure `evaluation.dataset_path` in `src/config/config_file.yaml`.
+
+The current evaluator requires these CSV columns:
+
+| Column | Content |
+|---|---|
+| `question` | User question |
+| `updated_golden_answer` | Verified expected answer |
+
+The golden dataset may also contain `id` and `references` for source verification. References should use exact PDF filenames and 1-based physical PDF page numbers.
+
+### Command
+
+```powershell
+uv run -m src.evalutions.main_evalution_pipeline
 ```
 
-You'll see:
-```
-============================================================
-LegalSaathi — Ask me about Indian criminal law (BNS/BNSS)
-Type 'exit' or 'quit' to end the conversation.
-============================================================
+The evaluator:
 
-You: What is the punishment for theft under BNS?
-```
+- Generates answers in batches of two.
+- Passes individual context chunks to DeepEval.
+- Measures five evaluation metrics.
+- Saves each completed batch to CSV.
+- Prints metric averages and the number of metric errors.
 
-Type your question and press Enter. Type `exit` or `quit` to end the session.
+The first batch overwrites the configured output CSV. Later batches append to it. Use a different `evaluation.output_path` for each experiment.
 
----
+`evaluation.threshold` is the DeepEval pass threshold. It is separate from the reranker’s `evaluation.min_score`.
 
-## Running evaluations
+## Current limitations
 
-```bash
-python "D:\LegalSaathi AI\src\evalutions\evals.py"
-```
+- Fixed-size chunks can split provisions or include unrelated provisions.
+- Retrieval and reranking can select the wrong Act or miss essential evidence.
+- Page metadata is inherited from extracted page documents and may be broader than an individual chunk's text.
+- The best-scoring chunk is retained even when its score is below the cutoff.
+- Model-generated evaluation scores require inspection alongside source evidence.
+- Laws, amendments and commencement status are only represented when present in the supplied corpus.
+- The application currently uses local Windows paths rather than portable path configuration.
 
-This scores the pipeline against the golden-answer CSV and saves per-row, per-metric
-results to `eval_results.csv`.
+## Roadmap
+
+- [ ] Improve Contextual Relevancy while preserving Recall and Faithfulness.
+- [ ] Compare chunking strategies in separate collections.
+- [ ] Improve provision completeness and page provenance.
+- [ ] Expand and review the golden dataset.
+- [ ] Resolve metric errors and inspect individual question failures.
+- [ ] Make paths and configuration portable.
+- [ ] Add a maintained application interface.

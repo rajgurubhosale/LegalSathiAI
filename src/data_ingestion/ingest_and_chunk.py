@@ -15,9 +15,8 @@ from src.logger import *
 import sys
 import torch
 from dotenv import load_dotenv
-from huggingface_hub import login
+from src.utils.main_utils import read_config_file
 load_dotenv()
-login(token=os.getenv('HF_TOKEN'))
 
 class PdfParser:
     def _build_document_converter(self):
@@ -123,7 +122,7 @@ class Chunker:
             # Use the filename for chunk identification, along with the page number and suffix
             doc.metadata["chunk_id"] = (
                 f"{doc.metadata['act_name']}_{page_key}{suffix}"
-            )
+                )
             page_counters[page_key] = count + 1
 
         return split_docs
@@ -189,7 +188,13 @@ class LegalDocumentIngestionPipeline:
 
         self.chunker = Chunker(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
-        self.vector_store_manager = VectorStoreManager()
+        config = read_config_file()
+
+        self.vector_store_manager = VectorStoreManager(
+            collection_name=config["vectorstore"]["db_name"],
+            persist_directory=config["vectorstore"]["db_path"],
+            embedding_model_name=config["embedding"]["model_name"],
+        )
 
         self.LABOUR_PDFS = {
                 "The Code on Social Security, 2020.pdf",
@@ -242,7 +247,7 @@ class LegalDocumentIngestionPipeline:
                 # 4. Split into chunks; metadata is copied into each chunk
                 chunked_docs = self.chunker.run(documents, pdf_number)
 
-                # 5. Store chunks
+                # 5. Store chunks   
                 self.vector_store_manager.run(chunked_docs)
 
                 logger.info(
@@ -264,10 +269,10 @@ if __name__ == "__main__":
         raise FileNotFoundError(f"PDF folder does not exist: {pdf_folder}")
 
     pipeline = LegalDocumentIngestionPipeline(
-        pdf_folder_path=pdf_folder,
-        chunk_size=800,
-        chunk_overlap=150
-    )
+            pdf_folder_path=pdf_folder,
+            chunk_size=1200,
+            chunk_overlap=100,
+        )
 
     pipeline.perform_ingestion()
     print("Ingestion completed successfully.")

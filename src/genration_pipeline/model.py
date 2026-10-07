@@ -1,5 +1,4 @@
 from langchain_groq import ChatGroq
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 from dotenv import load_dotenv
 import os
@@ -15,5 +14,11 @@ def get_model(model: str = "openai/gpt-oss-120b", temperature: float = 0):
     if not api_key:
         raise ValueError(f"{keyname} not found in environment.")
     
-    return ChatGroq(model=model, api_key=api_key, temperature=temperature)
+    return ChatGroq(
+        model=model,
+        api_key=api_key,
+        temperature=temperature,
+        timeout=60,
+        max_retries=1,
+    )
 

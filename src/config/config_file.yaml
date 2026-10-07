@@ -1,31 +1,43 @@
 
 embedding:
   model_name: Octen/Octen-Embedding-0.6B
+
 #vectorstore:
 #  type: Chroma
 #  db_name: legal_saathi
 #  db_path: 'D:\LegalSaathi AI\vectorstore'
 #
+
+ingestion:
+  pdf_folder: "D:/LegalSaathi AI/PDF_DATA"
+  chunks_path: "D:/LegalSaathi AI/CHUNKS/processed/chunks.jsonl"
+  chunk_size: 1200
+  chunk_overlap: 100
+  labour_pdfs:
+  - "The Code on Social Security, 2020.pdf"
+  - "The Code on Wages, 2019.pdf"
+  - "The Industrial Relations Code, 2020.pdf"
+  - "The Occupational Safety, Health and Working.pdf"
+
 vectorstore:
   type: Chroma
   db_name: legal_saathi_octen_1200
   db_path: 'D:\LegalSaathi AI\vectorstore_octen_1200'
 
 retrieval:
-  top_k: 10
+  top_n: 40
+  rerank_k: 6
+  min_score: 0.0
+  max_chunks: 4
 
-
-#rerank:
-#  model_name: 'cross-encoder/ms-marco-MiniLM-L-12-v2'
 rerank:
   model_name: "Qwen/Qwen3-Reranker-0.6B"
 
 evaluation:
-
-  dataset_path: 'D:\LegalSaathi AI\evalution_set\golden_dataset.csv'
-  output_path: 'D:\LegalSaathi AI\evalution_set\results_with_minscore.csv'
-
   threshold: 0.7
+
+  dataset_path: 'D:\LegalSaathi AI\evalution_set\final_evalution_set.csv'
+  output_path: 'D:\LegalSaathi AI\evalution_set\results_v6_corrected.csv'
   top_n: 40
   rerank_k: 6
   min_score: 0.0

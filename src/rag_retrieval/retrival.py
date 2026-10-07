@@ -1,5 +1,9 @@
 
-from src.data_ingestion.ingest_and_chunk import *
+import sys
+from dotenv import load_dotenv
+from langchain_chroma import Chroma
+from src.exception import MyException
+from src.logger import logger
 from src.utils.main_utils import read_config_file
 from pathlib import Path
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
@@ -9,6 +13,8 @@ import torch
 import re
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
+
+load_dotenv()
 
 class Retrieval:
 
@@ -27,15 +33,19 @@ class Retrieval:
             )
             self.bm25_retriever = self._load_bm25_retriever()
 
-            
-            logger.info(f"Warming up embedding model: {self.config['embedding']['model_name']}")
-            _ = self.embedding_model.embed_query("warmup") 
-            logger.info("Embedding model warm-up complete")
-
-            
+      
         except Exception as e:
             raise MyException(e,sys)        
     
+
+    def warmup(self) -> None:
+        try:
+            logger.info("Warming up retrieval")
+            self.retriever.invoke("warmup")      
+            logger.info("Retrieval warm-up complete")
+        except Exception as e:
+            raise MyException(e, sys)
+
     def _load_model(self):
 
         return HuggingFaceEmbeddings(
@@ -59,8 +69,8 @@ class Retrieval:
         
         if count == 0:
             logger.error(
-                f"Vector store '{self.config['embedding']['db_name']}' "
-                f"at {self.config['embedding']['db_path']} is empty (0 vectors)"
+                f"Vector store '{db_config['db_name']}' "
+                f"at '{db_config['db_path']}' is empty (0 vectors)"
             )
             raise MyException("Vector store is empty", sys)
         
@@ -122,21 +132,20 @@ class Retrieval:
             raise MyException(e,sys)
 
         
-    def retrive_adjacent_docs(self, user_query):
-        """
-        retrive pages from the vector store that are adjacent to the pages retrieved by the user query.
-        """
-        pass
-
 class Reranker:
     
     def __init__(self,rerank_k:int):
-        path = Path(r"D:\LegalSaathi AI\src\config\config_file.yaml")
-        
-        self.config = read_config_file(path)
+        self.config = read_config_file()
         self.rerank_k = rerank_k
         self.reranker_model = self._load_reranker_model()
-
+    
+    def warmup(self) -> None:
+        try:
+            logger.info("Warming up reranker")
+            self.reranker_model.client.predict([("warmup query", "warmup document")])
+            logger.info("Reranker warm-up complete")
+        except Exception as e:
+            raise MyException(e, sys)
 
     def _load_reranker_model(self):
         return HuggingFaceCrossEncoder(
@@ -147,7 +156,7 @@ class Reranker:
             )
     
     
-    def rerank(self, docs: list, query: str) -> list:
+    def rerank(self, docs: list, query: str, return_all: bool = False) -> list:
         if not docs:
             return []
 
@@ -170,4 +179,4 @@ class Reranker:
             reverse=True,
         )
 
-        return scored[:self.rerank_k]
+        return scored if return_all else scored[:self.rerank_k]

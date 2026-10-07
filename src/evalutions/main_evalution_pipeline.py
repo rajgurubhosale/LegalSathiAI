@@ -1,7 +1,8 @@
 import os
 import warnings
 from concurrent.futures import ThreadPoolExecutor
-
+from threading import Lock
+import json
 from deepeval import metrics
 import pandas as pd
 from dotenv import load_dotenv
@@ -24,6 +25,54 @@ load_dotenv()
 warnings.filterwarnings("ignore")
 from pathlib import Path
 import time
+import math
+
+
+def retrieval_metrics(docs, relevant_chunk_ids):
+
+    # Preserve ranking while removing duplicate IDs.
+    retrieved = list(dict.fromkeys(
+        doc.metadata["chunk_id"] for doc in docs
+    ))
+    relevant = set(relevant_chunk_ids)
+
+    # Recall and nDCG are undefined without relevant evidence.
+    if not relevant:
+        return {}
+
+    matches = len(set(retrieved) & relevant)
+    scores = {
+        "Precision (all chunks)": matches / len(retrieved) if retrieved else 0.0,
+        "Recall (all chunks)": matches / len(relevant),
+    }
+
+    for k in (5, 20):
+        hits = [
+            int(chunk_id in relevant)
+            for chunk_id in retrieved[:k]
+        ]
+
+        scores[f"Hit Rate@{k}"] = float(any(hits))
+        scores[f"Recall@{k}"] = sum(hits) / len(relevant)
+
+        if k == 5:
+            scores["MRR@5"] = next(
+                (1 / rank for rank, hit in enumerate(hits, 1) if hit),
+                0.0,
+            )
+
+            dcg = sum(
+                hit / math.log2(rank + 1)
+                for rank, hit in enumerate(hits, 1)
+            )
+            ideal_dcg = sum(
+                1 / math.log2(rank + 1)
+                for rank in range(1, min(k, len(relevant)) + 1)
+            )
+            scores["nDCG@5"] = dcg / ideal_dcg
+
+    return scores
+
 
 class MeshJudge(DeepEvalBaseLLM):
     """LangChain ChatOpenAI client (meshapi) wrapped as a deepeval judge."""
@@ -52,6 +101,7 @@ class MeshJudge(DeepEvalBaseLLM):
 class LegalSaathiEvaluator:
 
     def __init__(self,config):
+            self.config = config
             
             evalution_config = config['evaluation']
 
@@ -89,8 +139,27 @@ class LegalSaathiEvaluator:
         index, row = item
         question = row["question"]
 
-        chunks = self.pipeline.retrieve_context(question, return_chunks=True)
-        context = "\n\n".join(chunks)
+        docs, diagnostics = self.pipeline.retrieve_context(
+            question, return_docs=True, return_diagnostics=True,
+        )
+        retrieval_scores = retrieval_metrics(docs, row["relevant_chunk_ids"])
+        diagnostics.update({
+            "index": int(index),
+            "question": question,
+            "expected_answer": row["expected_answer"],
+            "relevant_chunk_ids": row["relevant_chunk_ids"],
+            "retrieval_scores": retrieval_scores,
+            "embedding": getattr(self, "config", {}).get("embedding"),
+            "rerank": getattr(self, "config", {}).get("rerank"),
+            "vectorstore": getattr(self, "config", {}).get("vectorstore"),
+        })
+        # Persist retrieval even when answer generation subsequently hits a limit.
+        if getattr(self, "diagnostics_path", None) is not None:
+            with self.diagnostics_lock:
+                with self.diagnostics_path.open("a", encoding="utf-8") as handle:
+                    handle.write(json.dumps(diagnostics, ensure_ascii=False) + "\n")
+        chunks = [doc.page_content for doc in docs]
+        context = self.pipeline.format_context(docs)
 
         output = self.pipeline.generate_answer(
             question=question,
@@ -98,7 +167,7 @@ class LegalSaathiEvaluator:
             chat_history=[],
         )
 
-        return index, output["answer"], chunks
+        return index, output["answer"], chunks, retrieval_scores
 
     @staticmethod
     def _build_cases(df, generated, expected_col):
@@ -110,7 +179,7 @@ class LegalSaathiEvaluator:
                 expected_output=df.loc[index, expected_col],
                 retrieval_context=context,
             )
-            for index, answer, context in generated
+            for index, answer, context, _ in generated
         ]
     
     def run(
@@ -118,6 +187,8 @@ class LegalSaathiEvaluator:
         df: pd.DataFrame,
         output_path: str | Path,
         min_batch_interval: float = 70.0,
+        stop_on_errors: bool = False,
+        batch_size: int = 2,
     ):
         if df.empty:
             raise ValueError("The evaluation dataset is empty.")
@@ -125,8 +196,12 @@ class LegalSaathiEvaluator:
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         all_results = []
-        batch_size = 2
-
+        retrieval_rows = []
+        retrieval_path = output_path.with_name(f"{output_path.stem}_retrieval.csv")
+        self.diagnostics_path = output_path.with_name(f"{output_path.stem}_diagnostics.jsonl")
+        self.diagnostics_path.write_text("", encoding="utf-8")
+        self.diagnostics_lock = Lock()
+        print(f"Saving retrieval diagnostics to {self.diagnostics_path}")
         for start in range(0, len(df), batch_size):
             batch_started = time.monotonic()
             batch = df.iloc[start:start + batch_size]
@@ -135,7 +210,17 @@ class LegalSaathiEvaluator:
             with ThreadPoolExecutor(max_workers=self.gen_workers) as executor:
                 generated = list(executor.map(self._generate, batch.iterrows()))
 
-            test_cases = self._build_cases(df, generated, "updated_golden_answer")
+            for index, _, _, scores in generated:
+                if scores:
+                    retrieval_rows.append({
+                        "index": index,
+                        "question": df.loc[index, "question"],
+                        **scores,
+                    })
+            if retrieval_rows:
+                pd.DataFrame(retrieval_rows).to_csv(retrieval_path, index=False)
+
+            test_cases = self._build_cases(df, generated, "expected_answer")
             metric_options = {
                 "threshold": self.threshold,
                 "model": self.judge,
@@ -184,6 +269,24 @@ class LegalSaathiEvaluator:
             all_results.append(batch_results)
             print(f"Saved batch to {output_path}")
 
+            if stop_on_errors:
+                scores = pd.to_numeric(batch_results["score"], errors="coerce")
+                errors = batch_results["error"].fillna("").astype(str).str.strip()
+                counts = batch_results.groupby("index")["metric"].nunique()
+                if (
+                    len(batch_results) != len(batch) * len(metrics)
+                    or batch_results.duplicated(["index", "metric"]).any()
+                    or set(counts.index) != set(batch.index)
+                    or not counts.eq(len(metrics)).all()
+                    or not scores.between(0, 1).all()
+                    or errors.ne("").any()
+                ):
+                    failures = errors[errors.ne("")].drop_duplicates().tolist()
+                    raise RuntimeError(
+                        f"Incomplete or failed metrics; partial results saved to {output_path}. "
+                        + " | ".join(failures)
+                    )
+
             if start + batch_size < len(df):
                 elapsed = time.monotonic() - batch_started
                 pause = max(0.0, min_batch_interval - elapsed)
@@ -193,6 +296,10 @@ class LegalSaathiEvaluator:
         results = pd.concat(all_results, ignore_index=True)
         print(results.groupby("metric")["score"].mean().round(3))
         print(f"Metric errors: {results['error'].notna().sum()}")
+        if retrieval_rows:
+            print("\nRetrieval metrics (final combined context):")
+            print(pd.DataFrame(retrieval_rows).drop(columns=["index", "question"]).mean().round(3))
+            print(f"Saved retrieval scores to {retrieval_path}")
         return results
 
     
@@ -200,7 +307,15 @@ if __name__ == "__main__":
     config = read_config_file()
     settings = config["evaluation"]
 
-    df = pd.read_csv(settings["dataset_path"])
+    
+    df = pd.read_csv(
+        settings["dataset_path"],
+        converters={
+        "relevant_chunk_ids": json.loads,
+        "relevant_pages": json.loads,
+        "relevant_acts": json.loads,},)
+    
+
     evaluator = LegalSaathiEvaluator(config)
     output_path = Path(settings["output_path"])
     evaluator.run(df, output_path=settings["output_path"])

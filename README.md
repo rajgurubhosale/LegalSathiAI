@@ -31,6 +31,19 @@ If every reranked candidate falls below the cutoff, the top candidate is retaine
 
 The Streamlit frontend calls FastAPI. The backend handles query rewriting, retrieval, reranking and answer generation.
 
+Accounts are stored in PostgreSQL, with Argon2 password hashing and JWT access tokens that expire after 30 minutes. Chat and PDF endpoints require a bearer token; the frontend supports registration, sign-in and sign-out.
+
+```text
+frontend/                 Streamlit UI, API client and browser session
+src/backend/              FastAPI routes, JWT authentication and database access
+src/genration_pipeline/   Answer generation
+src/rag_retrieval/        Hybrid retrieval and reranking
+src/config/               Model, retrieval and data settings
+src/data_ingestion/       Offline PDF extraction and indexing
+src/evalutions/           Offline evaluation
+docker-compose.yaml      Backend and frontend containers
+```
+
 ## Evaluation
 
 DeepEval uses `deepseek/deepseek-v4-flash` through MeshAPI. Questions, expected answers and evidence IDs are stored in `evalution_set/final_evalution_set.csv`.
@@ -83,14 +96,20 @@ Add your keys to `.env`:
 
 ```dotenv
 GROQ_API_KEY=your_groq_api_key
-MESH_DEEP_SEEK_FLASH=your_mesh_api_key
+MESH_DEEP_SEEK_FLASH=your_mesh_api_key # Evaluation only
+SECRET_KEY=your_generated_signing_key
+DATABASE_URL=postgresql://username:password@localhost:5432/legalsaathi
 ```
+
+Generate `SECRET_KEY` once with `uv run python -c "import secrets; print(secrets.token_hex(32))"`.
+Create the PostgreSQL database and replace the connection details above with your own.
+Create the `users` table before starting the backend: an auto-generated `id`, `username`, unique `email`, `hashed_password`, `role` (default `user`) and `is_active` (default `true`). The backend does not create the table automatically.
 
 Put PDFs in `PDF_DATA/` and set paths in [config_file.yaml](src/config/config_file.yaml).
 
 ### Build the index
 
-Skip this if your database is already populated.
+Skip this if your Chroma vector store is already populated. Ingestion and evaluation code are excluded from Docker builds.
 
 ```powershell
 uv run python -m src.data_ingestion.ingest_and_chunk
@@ -109,7 +128,7 @@ uv run python -m uvicorn src.backend.main:app --env-file .env --port 8000
 uv run streamlit run frontend/app.py
 ```
 
-Open [localhost:8501](http://localhost:8501).
+Open [localhost:8501](http://localhost:8501), then create an account or sign in. API documentation is available at [localhost:8000/docs](http://localhost:8000/docs).
 
 ### Docker
 
@@ -118,3 +137,5 @@ Once authentication and Docker settings are configured:
 ```powershell
 docker compose up --build
 ```
+
+Use a `DATABASE_URL` reachable from the backend container (`host.docker.internal` for PostgreSQL on Windows). Compose mounts the existing vector store and saves downloaded models in `model-cache`. PDF viewing also requires mounting `PDF_DATA/` at `/app/PDF_DATA`.

@@ -20,13 +20,16 @@ __pycache__/
 /vectorstore/
 /vectorstore_*/
 .deepeval
+CHUNKS/processed
 # Local notebooks and frontend
 /notebook/
 /notebooks/
-/frontend/
+updates.md
+.pytest_cache
 
 # Experimental scripts
 /src/evalutions/full_dataset_evaluator.py
+tests
 /src/rag_retrieval/exp.py
 /src/rag_retrieval/original.py
 

@@ -6,25 +6,26 @@ from src.backend.api.routers import auth, routes
 from src.backend.db.session import pool
 from src.genration_pipeline.pipeline import LegalSaathiPipeline
 from src.logger import logger
+from langgraph.checkpoint.memory import InMemorySaver
+from src.genration_pipeline.pipeline_graph import *
+
 
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        logger.info("Opening database pool...")
         pool.open(wait=True)
 
-        logger.info("Initializing LegalSaathi RAG pipeline...")
-        pipeline = LegalSaathiPipeline()
-        pipeline.warmup()
-        app.state.pipeline = pipeline
+        pipeline = LegalSaathiPipeline()      # created once, here only
+        pipeline.warmup()                     # models load here, not in compile
+
+        app.state.rag_app = build_graph(pipeline).compile(checkpointer=InMemorySaver())
+
 
         logger.info("LegalSaathi API is ready.")
         yield
-
     finally:
-        logger.info("Shutting down LegalSaathi API.")
         pool.close()
 
 app = FastAPI(title="legal-sathi-api", lifespan=lifespan)

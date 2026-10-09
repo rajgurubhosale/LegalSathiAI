@@ -1,12 +1,10 @@
 from pathlib import Path
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,Request
 from fastapi.responses import FileResponse, StreamingResponse
-
+from src.backend.services.chat import stream_answer
 from src.backend.api.dependencies import get_current_user, get_pipeline
 from src.backend.api.schemas import ChatRequest, ChatResponse
 from src.backend.api.sse import sse
-from src.backend.services.chat import build_sources, to_langchain
 from src.genration_pipeline.pipeline import LegalSaathiPipeline
 from src.logger import logger
 
@@ -44,31 +42,19 @@ def read_document(filename: str):
         raise HTTPException(status_code=404, detail="Document not found")
     return FileResponse(document, media_type="application/pdf", filename=filename, content_disposition_type="inline")
 
-@protected.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest, pipeline: LegalSaathiPipeline = Depends(get_pipeline)):
-    history = to_langchain(request.chat_history)
-    result = pipeline.run(request.question, chat_history=history)
-    return ChatResponse(
-        answer=result["answer"],
-        sources=result["sources"],
-        chat_history=[
-            {"role": "user" if message.type == "human" else "assistant", "content": message.content}
-            for message in result["chat_history"]
-        ],
-    )
 
 
 @protected.post("/chat/stream")
-def chat_stream(request: ChatRequest, pipeline: LegalSaathiPipeline = Depends(get_pipeline)):
-    history = to_langchain(request.chat_history)
+def chat_stream(request: ChatRequest, http: Request, user=Depends(get_current_user)):
+    rag_app = http.app.state.rag_app
 
     def events():
         try:
-            docs = pipeline.retrieve_context(request.question, return_docs=True, chat_history=history)
-            context = pipeline.format_context(docs)
-            for token in pipeline.generate_stream(request.question, context, history):
-                yield sse(token)
-            yield sse(build_sources(pipeline, docs), event="sources")
+            for kind, payload in stream_answer(rag_app,user["id"],  str(request.chat_id), request.question):
+                if kind == "token":
+                    yield sse(payload)
+                else:
+                    yield sse(payload, event="sources")
             yield sse("done", event="done")
         except Exception as e:
             logger.error(f"Stream failed: {e}")

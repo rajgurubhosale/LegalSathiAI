@@ -117,22 +117,18 @@ class LegalSaathiPipeline:
             if not isinstance(sub_questions, list) or not sub_questions:
                 return [question]
             
-            
             return sub_questions
 
         except Exception as e:
             logger.error(f"Query decomposition failed: {e}")
             return [question]
+   
+    def retrieve_context(self, question, return_chunks=False, return_docs=False,
+                     chat_history=None, return_diagnostics=False,
+                     search_queries: list[str] | None = None):
         
-    def retrieve_context(
-        self,
-        question: str,
-        return_chunks: bool = False,
-        return_docs: bool = False,
-        chat_history: list | None = None,
-        return_diagnostics: bool = False,
-    ):
-        search_queries = self.query_decomposition(question, chat_history)
+        if search_queries is None:
+            search_queries = self.query_decomposition(question, chat_history)
 
         ranked_groups = []
         diagnostics = {"search_queries": search_queries, "queries": []}

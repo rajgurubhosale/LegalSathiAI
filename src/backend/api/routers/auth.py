@@ -26,7 +26,7 @@ def register(data: UserCreate, db: Annotated[Connection, Depends(get_db)]):
 @router.post("/login", response_model=Token)
 def login(form: Annotated[OAuth2PasswordRequestForm, Depends()],db: Annotated[Connection, Depends(get_db)]):
     """ user login validation """
-    user_dict = get_user_by_email(db, form.username)      # form.username holds the email
+    user_dict = get_user_by_email(db, form.username)      
     headers = {"WWW-Authenticate": "Bearer"}
 
     if not user_dict:

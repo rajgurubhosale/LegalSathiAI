@@ -17,6 +17,7 @@ services:
       start_period: 5m
     
     volumes:
+      - ./PDF_DATA:/app/PDF_DATA:ro
       - ./vectorstore_octen_1200:/app/vectorstore_octen_1200
       - model-cache:/root/.cache/huggingface
     restart: unless-stopped
@@ -32,8 +33,7 @@ services:
       
     depends_on:
       backend:
-      condition: service_healthy
-    restart: unless-stopped
+        condition: service_healthy
 
 volumes:
   model-cache:

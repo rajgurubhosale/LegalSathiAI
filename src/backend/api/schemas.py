@@ -31,10 +31,11 @@ class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1,max_length=4000)
 
+
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
+    chat_id: str = Field(min_length=1)
     chat_history: list[ChatMessage] = Field(default_factory=list, max_length=20)
-
 
 class Source(BaseModel):
     act_name: str | None = None

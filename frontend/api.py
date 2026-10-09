@@ -1,3 +1,4 @@
+import json
 import os
 from urllib.parse import quote
 
@@ -53,18 +54,37 @@ def get_profile(token):
     return response.json()
 
 
-def ask_question(question, history, token):
-    response = requests.post(
-        f"{BACKEND_URL}/chat",
+def ask_question(question, chat_id, token, on_token=None):
+    with requests.post(
+        f"{BACKEND_URL}/chat/stream",
         headers={"Authorization": f"Bearer {token}"},
-        json={
-            "question": question,
-            "chat_history": recent_history(history),
-        },
+        json={"question": question, "chat_id": chat_id},
         timeout=(5, 180),
-    )
-    response.raise_for_status()
-    return response.json()
+        stream=True,
+    ) as response:
+        response.raise_for_status()
+        response.encoding = "utf-8"
+        answer = []
+        sources = []
+        event = "message"
+        for line in response.iter_lines(chunk_size=1, decode_unicode=True):
+            if not line:
+                event = "message"
+            elif line.startswith("event:"):
+                event = line[6:].strip()
+            elif line.startswith("data:"):
+                payload = json.loads(line[5:].strip())
+                if event == "error":
+                    raise requests.HTTPError(str(payload), response=response)
+                if event == "sources":
+                    sources = payload
+                elif event == "done":
+                    return {"answer": "".join(answer), "sources": sources}
+                elif event == "message":
+                    answer.append(payload)
+                    if on_token is not None:
+                        on_token("".join(answer))
+        raise requests.RequestException("Chat stream ended before completion.", response=response)
 
 
 def list_documents(token):

@@ -83,13 +83,45 @@
 .sidebar-note strong { color: #286253; font-size: 0.85rem; }
 .sidebar-note p { color: #587267; font-size: 0.78rem; line-height: 1.6; margin: 6px 0 0; }
 
-.st-key-account_header { margin-bottom: 24px; }
-.st-key-account_control {
-    padding: 8px 16px 8px 8px;
-    border: 1px solid #e1eae4;
-    border-radius: 32px;
+.st-key-account_header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: auto !important;
+    height: 80px;
+    padding: 12px 56px 12px 64px;
+    z-index: 99998;
     background: #fff;
-    box-shadow: 0 3px 12px #193c3705;
+    border-bottom: 1px solid #e1eae4;
+    flex-wrap: nowrap;
+}
+body:has(.st-key-account_header) [data-testid="stHeader"] {
+    background: transparent;
+}
+body:has(.st-key-account_header) [data-testid="stHeader"],
+body:has(.st-key-account_header) [data-testid="stHeader"] * {
+    pointer-events: none;
+}
+body:has(.st-key-account_header) [data-testid="stHeader"] button,
+body:has(.st-key-account_header) [data-testid="stHeader"] button * {
+    pointer-events: auto;
+}
+body:has(.st-key-account_header) [data-testid="stAppDeployButton"],
+body:has(.st-key-account_header) [data-testid="stToolbarActions"] {
+    display: none;
+}
+body:has(.st-key-account_header) [data-testid="stMainBlockContainer"] {
+    padding-top: 112px;
+}
+.st-key-account_clock { flex-shrink: 0; }
+.header-clock { display: flex; flex-direction: column; text-align: right; white-space: nowrap; letter-spacing: 0; }
+.header-date { color: #60766d; font-size: 0.75rem; line-height: 1.5; }
+.header-time { color: #193c37; font-size: 0.9rem; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.st-key-account_control {
+    padding: 0 0 0 20px;
+    border-left: 1px solid #e1eae4;
+    flex-shrink: 0;
 }
 .st-key-account_avatar button {
     width: 44px;
@@ -109,6 +141,29 @@
 .account-name { display: block; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.95rem; line-height: 1.45; color: #193c37; }
 .account-role { font-size: 0.75rem; line-height: 1.45; color: #60766d; }
 
+[data-testid="stPopoverBody"]:has(.st-key-account_sign_out) {
+    position: fixed !important;
+    top: 72px !important;
+    right: 56px !important;
+    left: auto !important;
+    transform: none !important;
+    width: 152px !important;
+    min-width: 0 !important;
+    padding: 8px;
+    border-radius: 8px;
+}
+.st-key-account_settings button,
+.st-key-account_sign_out button {
+    min-height: 36px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    justify-content: flex-start;
+}
+[data-testid="stPopoverBody"]:has(.st-key-account_sign_out) [data-testid="stVerticalBlock"] {
+    gap: 2px;
+}
+
 [class*="st-key-vault_card_"] { background: #fff; border-color: #e1eae4; border-radius: 18px; }
 [class*="st-key-vault_card_"] [data-testid="stMarkdownContainer"] { color: #136c5e; }
 [class*="st-key-vault_card_"] button { background: #e4f3ec; color: #136c5e; border-color: #c5e4d9; }
@@ -116,6 +171,12 @@
 .vault-document-name { color: #193c37; font-weight: 600; font-size: 1rem; line-height: 1.4; height: 44px; overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 
 @media (max-width: 640px) {
+    [data-testid="stPopoverBody"]:has(.st-key-account_sign_out) { top: 68px !important; right: 48px !important; }
+    .st-key-account_header { height: 76px; padding: 10px 48px 10px 44px; gap: 12px; }
+    .st-key-account_control { padding-left: 12px; gap: 8px; }
+    .account-name { max-width: 80px; font-size: 0.85rem; }
+    .header-date { font-size: 0.65rem; }
+    .header-time { font-size: 0.8rem; }
     .st-key-auth_shell { margin: 0 auto; }
     .st-key-welcome_panel { padding: 26px; border-radius: 22px; }
     .welcome-features { gap: 16px; margin: 24px 0; }

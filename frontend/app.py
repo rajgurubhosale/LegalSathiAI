@@ -1,4 +1,5 @@
 import sys
+from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
 from uuid import uuid4
@@ -18,7 +19,7 @@ st.html(Path(__file__).with_name("styles.css"))
 
 def sign_out():
     st.session_state.clear_browser_auth = True
-    for key in ("access_token", "username", "chats", "current_chat", "active_view", "vault_page", "vault_current_page", "selected_pdf"):
+    for key in ("access_token", "username", "chats", "current_chat", "active_view", "vault_page", "vault_current_page", "selected_pdf", "show_sources", "settings_show_sources"):
         st.session_state.pop(key, None)
 
 
@@ -158,10 +159,24 @@ def open_pdf(filename):
     st.session_state.selected_pdf = filename
 
 
+def save_source_preference():
+    st.session_state.show_sources = st.session_state.settings_show_sources
+
+
+@st.dialog("Settings", on_dismiss="rerun")
+def show_settings():
+    st.toggle(
+        "Show sources", value=st.session_state.get("show_sources", True),
+        key="settings_show_sources", on_change=save_source_preference,
+    )
+    if st.button("Done", type="primary", icon=":material/check:"):
+        st.rerun()
+
+
 def show_message(message):
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
-        if message.get("sources"):
+        if message.get("sources") and st.session_state.get("show_sources", True):
             with st.expander("View sources", icon=":material/library_books:"):
                 for source in message["sources"]:
                     name = source.get("act_name") or source.get("pdf") or "Document"
@@ -210,11 +225,27 @@ with st.sidebar:
 username = (st.session_state.get("username") or "").strip() or "User"
 name_parts = username.split()
 initials = name_parts[0][0] + (name_parts[-1][0] if len(name_parts) > 1 else "")
-with st.container(key="account_header", horizontal=True, horizontal_alignment="right"):
+
+
+@st.fragment(run_every="30s")
+def show_header_clock():
+    now = datetime.now(timezone(timedelta(hours=5, minutes=30)))
+    st.html(
+        f'<time class="header-clock" datetime="{now.isoformat()}">'
+        f'<span class="header-date">{now:%a, %d %b %Y}</span>'
+        f'<span class="header-time">{now:%I:%M %p} IST</span></time>'
+    )
+
+
+with st.container(key="account_header", horizontal=True, horizontal_alignment="right", vertical_alignment="center", gap="medium"):
+    with st.container(key="account_clock", width="content"):
+        show_header_clock()
     with st.container(key="account_control", horizontal=True, width="content", vertical_alignment="center", gap="small"):
         with st.container(key="account_avatar", width="content"):
-            with st.popover(initials.upper(), help="Account menu"):
-                st.button("Sign out", icon=":material/logout:", on_click=sign_out, width="stretch")
+            with st.popover(initials.upper()):
+                if st.button("Settings", key="account_settings", icon=":material/settings:", type="tertiary", width="stretch"):
+                    show_settings()
+                st.button("Sign out", key="account_sign_out", icon=":material/logout:", on_click=sign_out, type="tertiary", width="stretch")
         with st.container(key="account_identity", width="content"):
             st.html(f'<div class="account-details"><strong class="account-name">{escape(username)}</strong>'
                     '<span class="account-role">User</span></div>')
@@ -295,8 +326,14 @@ if question:
     show_message(message)
 
     try:
-        with st.spinner("Searching documents…"):
-            result = ask_question(question, chat["history"], st.session_state.access_token)
+        with st.chat_message("assistant"):
+            answer_placeholder = st.empty()
+            with st.spinner("Searching documents…"):
+                result = ask_question(
+                    question, st.session_state.current_chat,
+                    st.session_state.access_token,
+                    on_token=answer_placeholder.markdown,
+                )
 
         reply = {
             "role": "assistant",

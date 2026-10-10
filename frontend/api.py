@@ -54,6 +54,36 @@ def get_profile(token):
     return response.json()
 
 
+def create_chat_draft(token):
+    response = requests.post(
+        f"{BACKEND_URL}/chats/draft",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=(5, 10),
+    )
+    response.raise_for_status()
+    return response.json()["chat_id"]
+
+
+def list_chats(token):
+    response = requests.get(
+        f"{BACKEND_URL}/chats",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=(5, 10),
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def load_messages(token, chat_id):
+    response = requests.get(
+        f"{BACKEND_URL}/chats/{quote(str(chat_id), safe='')}/messages",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=(5, 10),
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 def ask_question(question, chat_id, token, on_token=None):
     with requests.post(
         f"{BACKEND_URL}/chat/stream",

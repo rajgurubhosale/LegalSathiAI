@@ -1,8 +1,9 @@
+import json
+import re
 import sys
 from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
-from uuid import uuid4
 
 import streamlit as st
 import requests
@@ -10,7 +11,10 @@ import requests
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from frontend.api import ask_question, get_profile, list_documents, login, read_document, recent_history, register
+from frontend.api import (
+    ask_question, create_chat_draft, get_profile, list_chats, list_documents,
+    load_messages, login, read_document, recent_history, register,
+)
 from frontend.session import sync_browser_session
 
 st.set_page_config(page_title="LegalSaathi", page_icon="⚖️", layout="wide")
@@ -19,7 +23,7 @@ st.html(Path(__file__).with_name("styles.css"))
 
 def sign_out():
     st.session_state.clear_browser_auth = True
-    for key in ("access_token", "username", "chats", "current_chat", "active_view", "vault_page", "vault_current_page", "selected_pdf", "show_sources", "settings_show_sources"):
+    for key in ("access_token", "username", "chats", "recent_chats", "chat_error", "current_chat", "active_view", "vault_page", "vault_current_page", "selected_pdf", "show_sources", "settings_show_sources"):
         st.session_state.pop(key, None)
 
 
@@ -136,18 +140,82 @@ if not st.session_state.get("access_token"):
     st.stop()
 
 
+def chat_request_failed(error, message):
+    if isinstance(error, requests.HTTPError) and error.response is not None:
+        if error.response.status_code == 401:
+            session_expired()
+    st.session_state.chat_error = message
+
+
+def refresh_recent_chats():
+    try:
+        saved = list_chats(st.session_state.access_token)
+    except requests.RequestException as error:
+        chat_request_failed(error, "Could not refresh recent chats. Please try again.")
+        return
+    st.session_state.recent_chats = saved
+    if st.session_state.get("chat_error") == "Could not refresh recent chats. Please try again.":
+        st.session_state.pop("chat_error", None)
+    for item in saved:
+        if item["chat_id"] in st.session_state.chats:
+            chat = st.session_state.chats[item["chat_id"]]
+            chat["is_draft"] = False
+            chat["title"] = item["title"]
+
+
 def new_chat():
-    chat_id = uuid4().hex
+    try:
+        chat_id = create_chat_draft(st.session_state.access_token)
+    except requests.RequestException as error:
+        chat_request_failed(error, "Could not start a new chat. Please try again.")
+        return
+    for old_id, chat in list(st.session_state.chats.items()):
+        if chat.get("is_draft") and not chat["messages"]:
+            del st.session_state.chats[old_id]
     st.session_state.chats[chat_id] = {
-        "title": "New chat", "messages": [], "history": [],
+        "title": "New chat", "messages": [], "history": [], "is_draft": True,
     }
     st.session_state.current_chat = chat_id
     st.session_state.active_view = "chat"
+    st.session_state.pop("chat_error", None)
 
 
-def switch_chat(chat_id):
+def switch_chat(chat_id, title):
+    try:
+        messages = load_messages(st.session_state.access_token, chat_id)
+    except requests.RequestException as error:
+        chat_request_failed(error, "Could not load this chat. Please try again.")
+        return
+    st.session_state.chats[chat_id] = {
+        "title": title, "messages": messages, "history": [], "is_draft": False,
+    }
     st.session_state.current_chat = chat_id
     st.session_state.active_view = "chat"
+    st.session_state.pop("chat_error", None)
+
+
+@st.fragment(run_every="30s", key="recent_chats")
+def show_recent_chats():
+    if not st.session_state.get("access_token"):
+        return
+    refresh_recent_chats()
+    st.caption("YOUR CONVERSATIONS")
+    if chat_error := st.session_state.get("chat_error"):
+        st.error(chat_error)
+    with st.container(key="chat_history"):
+        for item in st.session_state.get("recent_chats", []):
+            chat_id = item["chat_id"]
+            if st.button(
+                item["title"], icon=":material/chat_bubble_outline:",
+                key=chat_id,
+                type="primary" if (
+                    st.session_state.get("active_view", "chat") == "chat"
+                    and chat_id == st.session_state.current_chat
+                ) else "secondary",
+                width="stretch",
+            ):
+                switch_chat(chat_id, item["title"])
+                st.rerun()
 
 
 def open_vault():
@@ -157,6 +225,18 @@ def open_vault():
 
 def open_pdf(filename):
     st.session_state.selected_pdf = filename
+
+
+@st.cache_data
+def load_pdf_summaries() -> dict:
+    summary_file = ROOT / "src" / "backend" / "services" / "pdf_data_summary.json"
+    if summary_file.is_file():
+        try:
+            with open(summary_file, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
 
 
 def save_source_preference():
@@ -174,7 +254,8 @@ def show_settings():
 
 
 def show_message(message):
-    with st.chat_message(message["role"]):
+    avatar = ":material/person:" if message["role"] == "user" else ":material/balance:"
+    with st.chat_message(message["role"], avatar=avatar):
         st.markdown(message["content"])
         if message.get("sources") and st.session_state.get("show_sources", True):
             with st.expander("View sources", icon=":material/library_books:"):
@@ -190,7 +271,13 @@ def show_message(message):
 
 if "chats" not in st.session_state:
     st.session_state.chats = {}
+if "current_chat" not in st.session_state:
     new_chat()
+if "current_chat" not in st.session_state:
+    st.error(st.session_state.get("chat_error") or "Could not start a new chat.")
+    if st.button("Retry"):
+        st.rerun()
+    st.stop()
 
 with st.sidebar:
     st.html("""<div class="sidebar-brand"><span class="brand-symbol" aria-hidden="true">⚖</span><div>
@@ -204,21 +291,7 @@ with st.sidebar:
             width="stretch",
         )
     st.space("small")
-    st.caption("YOUR CONVERSATIONS")
-    with st.container(key="chat_history"):
-        for chat_id, saved_chat in reversed(list(st.session_state.chats.items())):
-            st.button(
-                saved_chat["title"], icon=":material/chat_bubble_outline:",
-                key=chat_id,
-                type="primary" if (
-                    st.session_state.get("active_view", "chat") == "chat"
-                    and chat_id == st.session_state.current_chat
-                ) else "secondary",
-                on_click=switch_chat,
-                args=(chat_id,),
-                width="stretch",
-            )
-    st.caption("Chats are kept for this browser session.")
+    show_recent_chats()
     st.html("""<div class="sidebar-note"><strong>Start with a simple question.</strong>
         <p>Explore an Act, understand a right, or find your next step.</p></div>""")
 
@@ -284,14 +357,32 @@ if st.session_state.get("active_view") == "vault":
             if page_count > 1:
                 page = st.selectbox("Page", range(1, page_count + 1), index=min(st.session_state.get("vault_current_page", 1), page_count) - 1, key="vault_page", width=140)
             st.session_state.vault_current_page = page
+            summaries = load_pdf_summaries()
             visible_pdfs = pdfs[(page - 1) * 9:page * 9]
             for start in range(0, len(visible_pdfs), 3):
                 columns = st.columns(3)
                 for column, pdf in zip(columns, visible_pdfs[start:start + 3]):
-                    with column, st.container(key=f"vault_card_{pdf}", border=True, height=220, gap="small"):
-                        st.markdown(":material/description:")
-                        st.html(f'<div class="vault-document-name" title="{escape(pdf, quote=True)}">{escape(pdf)}</div>')
-                        st.caption("PDF document")
+                    doc = summaries.get(pdf, {})
+                    title = doc.get("title", pdf)
+                    category = doc.get("category", "LEGAL STATUTE")
+                    summary_text = doc.get("summary", "Official statutory legal document.")
+                    status = doc.get("status", "System Indexed")
+                    tier = doc.get("tier", "Foundational")
+                    cat_slug = f"cat-{re.sub(r'[^a-z0-9]+', '-', category.lower()).strip('-')}"
+
+                    with column, st.container(key=f"vault_card_{pdf}", border=True, height=295, gap="small"):
+                        st.html(f"""
+                            <div class="vault-card-top">
+                                <span class="vault-badge {cat_slug}">{escape(category)}</span>
+                                <span class="vault-status"><span class="status-dot"></span>{escape(status)}</span>
+                            </div>
+                            <div class="vault-title" title="{escape(title)}">{escape(title)}</div>
+                            <div class="vault-summary" title="{escape(summary_text)}">{escape(summary_text)}</div>
+                            <div class="vault-footer">
+                                <span class="vault-file-pill" title="{escape(pdf)}">📄 {escape(pdf)}</span>
+                                <span class="vault-tier">{escape(tier)}</span>
+                            </div>
+                        """)
                         st.button("Read PDF", key=f"read_{pdf}", icon=":material/menu_book:", on_click=open_pdf, args=(pdf,), width="stretch")
     st.stop()
 
@@ -317,6 +408,8 @@ for message in chat["messages"]:
 
 st.caption("General legal information only. Not a substitute for a qualified advocate.")
 question = st.chat_input("Ask a legal question…", submit_mode="disable") or question
+if question:
+    question = question.strip()
 
 if question:
     if not chat["messages"]:
@@ -326,7 +419,7 @@ if question:
     show_message(message)
 
     try:
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar=":material/balance:"):
             answer_placeholder = st.empty()
             with st.spinner("Searching documents…"):
                 result = ask_question(
@@ -364,4 +457,5 @@ if question:
     except requests.RequestException:
         reply = {"role": "assistant", "content": "Could not complete the request. Please try again."}
     chat["messages"].append(reply)
+    refresh_recent_chats()
     st.rerun()

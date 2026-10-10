@@ -164,11 +164,130 @@ body:has(.st-key-account_header) [data-testid="stMainBlockContainer"] {
     gap: 2px;
 }
 
-[class*="st-key-vault_card_"] { background: #fff; border-color: #e1eae4; border-radius: 18px; }
+[class*="st-key-vault_card_"] {
+    background: #ffffff;
+    border-color: #e1eae4;
+    border-radius: 18px;
+    padding: 14px 16px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+[class*="st-key-vault_card_"]:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 6px 18px rgba(19, 108, 94, 0.08);
+}
 [class*="st-key-vault_card_"] [data-testid="stMarkdownContainer"] { color: #136c5e; }
-[class*="st-key-vault_card_"] button { background: #e4f3ec; color: #136c5e; border-color: #c5e4d9; }
-[class*="st-key-vault_card_"] button:hover { background: #d1eade; border-color: #087f72; }
-.vault-document-name { color: #193c37; font-weight: 600; font-size: 1rem; line-height: 1.4; height: 44px; overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+[class*="st-key-vault_card_"] button {
+    background: #e4f3ec !important;
+    color: #136c5e !important;
+    border-color: #c5e4d9 !important;
+    font-size: 0.85rem !important;
+    font-weight: 600 !important;
+}
+[class*="st-key-vault_card_"] button:hover {
+    background: #d1eade !important;
+    border-color: #087f72 !important;
+}
+
+.vault-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.vault-badge {
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    text-transform: uppercase;
+}
+
+.cat-criminal-law, .cat-criminal-procedure { background: #fee2e2; color: #991b1b; }
+.cat-constitutional-law { background: #f3e8ff; color: #7e22ce; }
+.cat-civil-procedure, .cat-contract-commercial { background: #e0f2fe; color: #0369a1; }
+.cat-consumer-rights { background: #dbeafe; color: #1d4ed8; }
+.cat-cyber-tech-law, .cat-cyber-data-privacy { background: #cffafe; color: #0e7490; }
+.cat-administrative-law { background: #fef3c7; color: #92400e; }
+.cat-real-estate-property { background: #dcfce7; color: #15803d; }
+.cat-labour-employment { background: #ede9fe; color: #5b21b6; }
+.cat-women-s-rights-protection { background: #fce7f3; color: #9d174d; }
+.cat-child-rights-labour { background: #ffedd5; color: #c2410c; }
+.cat-transport-motor-vehicles { background: #fef9c3; color: #854d0e; }
+.cat-telecommunications-tech { background: #e0e7ff; color: #4338ca; }
+.cat-media-press-regulation { background: #f1f5f9; color: #334155; }
+.cat-legal-aid-access-to-justice { background: #ccfbf1; color: #0f766e; }
+
+.vault-status {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #0d9488;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #0d9488;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.vault-title {
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 0.95rem;
+    line-height: 1.35;
+    margin-top: 4px;
+    margin-bottom: 4px;
+    height: 38px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.vault-summary {
+    color: #64748b;
+    font-size: 0.8rem;
+    line-height: 1.4;
+    height: 48px;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    margin-bottom: 8px;
+}
+
+.vault-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    margin-bottom: 6px;
+}
+
+.vault-file-pill {
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.vault-tier {
+    font-weight: 500;
+    color: #64748b;
+}
 
 @media (max-width: 640px) {
     [data-testid="stPopoverBody"]:has(.st-key-account_sign_out) { top: 68px !important; right: 48px !important; }

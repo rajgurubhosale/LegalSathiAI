@@ -1,0 +1,663 @@
+{
+  "BNS2023.pdf": {
+    "filename": "BNS2023.pdf",
+    "title": "Bharatiya Nyaya Sanhita, 2023",
+    "short_name": "BNS",
+    "act_number": "Act No. 45 of 2023",
+    "enactment_year": 2023,
+    "category": "CRIMINAL LAW",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 237,
+    "replaces_or_amends": "Indian Penal Code (IPC), 1860",
+    "summary": "India's modern substantive criminal code replacing the IPC, 1860. Defines offenses, penalties, corporate liability, general exceptions, and community service.",
+    "detailed_description": "The Bharatiya Nyaya Sanhita (BNS), 2023 consolidates and amends the provisions relating to criminal offences in India, repealing the colonial Indian Penal Code of 1860. It modernises penal provisions, introduces community service for petty offences, defines organised crime and terrorist acts, enhances protections for women and children, and updates legal definitions to reflect contemporary digital and socio-legal realities.",
+    "key_provisions": [
+      "General Exceptions and Right of Private Defence",
+      "Offences Affecting Life, Liberty, and the Human Body",
+      "Offences Against Women and Children (Cruelty, Sexual Assault)",
+      "Offences Against Property (Theft, Extortion, Cheating)",
+      "Organized Crime, Terrorist Acts, and Endangering Sovereignty",
+      "Community Service as an Alternative Penal Sanction"
+    ],
+    "key_topics": [
+      "Substantive Criminal Law",
+      "Penal Code",
+      "Punishments & Sentencing",
+      "Community Service",
+      "Organized Crime",
+      "BNS 2023"
+    ]
+  },
+  "BNSS.pdf": {
+    "filename": "BNSS.pdf",
+    "title": "Bharatiya Nagarik Suraksha Sanhita, 2023",
+    "short_name": "BNSS",
+    "act_number": "Act No. 46 of 2023",
+    "enactment_year": 2023,
+    "category": "CRIMINAL PROCEDURE",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 249,
+    "replaces_or_amends": "Code of Criminal Procedure (CrPC), 1973",
+    "summary": "Governs criminal procedure, investigation, arrest, regular & anticipatory bail, trial proceedings, electronic summons, and High Court inherent powers.",
+    "detailed_description": "The Bharatiya Nagarik Suraksha Sanhita (BNSS), 2023 governs criminal procedural law and law enforcement administration in India, superseding the Code of Criminal Procedure, 1973. It establishes time-bound investigation timelines, mandatory videography and forensic documentation of search and seizure operations, clear statutory guidelines for arrest and bail, and modern electronic mechanisms for trials, summons, and judgments.",
+    "key_provisions": [
+      "Arrest Procedures, Custody Safeguards, and Accused Rights",
+      "Mandatory Audio-Video Recording of Search and Seizure",
+      "Bail, Anticipatory Bail, Bonds, and Sureties",
+      "Trial and Inquiry Procedures in Magistrate and Sessions Courts",
+      "Electronic Summons, Warrants, and Virtual Court Proceedings",
+      "Zero FIR, Electronic Complaints, and Victim Rights"
+    ],
+    "key_topics": [
+      "Criminal Procedure",
+      "Police Powers & Investigation",
+      "Anticipatory Bail",
+      "Trial Procedure",
+      "Forensic Documentation",
+      "BNSS 2023"
+    ]
+  },
+  "BSA.pdf": {
+    "filename": "BSA.pdf",
+    "title": "Bharatiya Sakshya Adhiniyam, 2023",
+    "short_name": "BSA",
+    "act_number": "Act No. 47 of 2023",
+    "enactment_year": 2023,
+    "category": "LAW OF EVIDENCE",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 47,
+    "replaces_or_amends": "Indian Evidence Act, 1872",
+    "summary": "Comprehensive rules on admissibility of evidence, electronic & digital records, primary vs secondary evidence, burden of proof, and witness testimony.",
+    "detailed_description": "The Bharatiya Sakshya Adhiniyam (BSA), 2023 consolidates general rules and principles of evidence to ensure fair trials across civil and criminal court proceedings in India. It explicitly accords electronic and digital records the status of primary evidence, details standards for digital data admissibility and certification, modernizes witness examination protocols, and codifies statutory rules on presumptions, admissions, dying declarations, and the burden of proof.",
+    "key_provisions": [
+      "Admissibility and Certification of Electronic & Digital Records",
+      "Primary and Secondary Evidence Classifications",
+      "Relevancy of Facts, Admissions, and Dying Declarations",
+      "Burden of Proof, Presumptions of Law, and Estoppel",
+      "Competence, Examination, and Cross-Examination of Witnesses",
+      "Expert Opinions, Scientific Forensics, and Medical Reports"
+    ],
+    "key_topics": [
+      "Law of Evidence",
+      "Electronic & Digital Evidence",
+      "Witness Examination",
+      "Burden of Proof",
+      "Primary & Secondary Evidence",
+      "BSA 2023"
+    ]
+  },
+  "RERA_ACT.pdf": {
+    "filename": "RERA_ACT.pdf",
+    "title": "The Real Estate (Regulation and Development) Act, 2016",
+    "short_name": "RERA",
+    "act_number": "Act No. 16 of 2016",
+    "enactment_year": 2016,
+    "category": "REAL ESTATE & PROPERTY",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 39,
+    "replaces_or_amends": "None (Special real estate regulatory enactment)",
+    "summary": "Regulates real estate transactions, mandates promoter registration, enforces 70% escrow accounts, and protects homebuyers' investment and possession rights.",
+    "detailed_description": "The Real Estate (Regulation and Development) Act, 2016 protects homebuyers and boosts transparency across the Indian real estate market. It mandates that developers register commercial and residential projects before advertising, requires 70% of buyer collections to be deposited into an escrow account for construction purposes, standardizes carpet area definitions, and enforces statutory interest compensation and refunds for delayed project possession.",
+    "key_provisions": [
+      "Mandatory Project and Real Estate Agent Registration with RERA",
+      "70% Escrow Account Requirement for Construction Capital",
+      "Standardized Carpet Area Disclosure and Anti-Misrepresentation Rules",
+      "Right to Refund with Interest upon Promoter Default or Delay",
+      "5-Year Promoter Liability for Structural and Workmanship Defects",
+      "Adjudication by State Real Estate Regulatory Authorities & Tribunals"
+    ],
+    "key_topics": [
+      "Real Estate Law",
+      "Homebuyer Protection",
+      "Promoter Registration",
+      "Delayed Possession Remedies",
+      "Escrow Account Mandate",
+      "RERA Adjudication"
+    ]
+  },
+  "RTI.pdf": {
+    "filename": "RTI.pdf",
+    "title": "Right to Information Act, 2005",
+    "short_name": "RTI Act",
+    "act_number": "Act No. 22 of 2005",
+    "enactment_year": 2005,
+    "category": "ADMINISTRATIVE LAW",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 23,
+    "replaces_or_amends": "Freedom of Information Act, 2002",
+    "summary": "Guarantees citizen access to public authority records, proactive disclosure obligations, exemption grounds, time-bound responses, and appellate mechanisms.",
+    "detailed_description": "The Right to Information Act, 2005 empowers Indian citizens to secure access to information under the control of public authorities to promote transparency and accountability in governance. It mandates Public Information Officers (PIOs) to provide information within 30 days (or 48 hours for life and liberty matters), defines narrow exemptions under Section 8, and sets up Central and State Information Commissions with penalty powers.",
+    "key_provisions": [
+      "Citizen Right to Inspect Public Works and Obtain Certified Records",
+      "Proactive Disclosure Obligations of Public Authorities (Section 4)",
+      "Strict 30-Day Response Mandate for Public Information Officers (PIOs)",
+      "Narrow Grounds for Exemption from Disclosure (Section 8 & 9)",
+      "First Appeal and Second Appeal Mechanisms to Information Commissions",
+      "Penal Sanctions against Errant PIOs for Willful Denial or Delay"
+    ],
+    "key_topics": [
+      "Right to Information",
+      "Administrative Accountability",
+      "Citizen Rights",
+      "Public Information Officers",
+      "Information Commissions",
+      "RTI Appeals"
+    ]
+  },
+  "THE CHILD AND ADOLESCENT (PROHIBITION AND REGULATION) ACT, 1986.pdf": {
+    "filename": "THE CHILD AND ADOLESCENT (PROHIBITION AND REGULATION) ACT, 1986.pdf",
+    "title": "The Child and Adolescent Labour (Prohibition and Regulation) Act, 1986",
+    "short_name": "Child Labour Act",
+    "act_number": "Act No. 61 of 1986",
+    "enactment_year": 1986,
+    "category": "CHILD RIGHTS & LABOUR",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 11,
+    "replaces_or_amends": "Employment of Children Act, 1938 (Substantially amended in 2016)",
+    "summary": "Prohibits employment of children below 14 in all occupations, bars adolescents from hazardous occupations, and prescribes strict penal liabilities for employers.",
+    "detailed_description": "The Child and Adolescent Labour (Prohibition and Regulation) Act, 1986 comprehensively prohibits the employment of children under 14 years of age in any commercial occupation or enterprise, and bars adolescents (aged 14 to 18) from working in hazardous conditions or processes. It regulates hours and conditions where adolescents may be employed, institutes a rehabilitation fund for rescued children, and imposes severe criminal penalties on violating employers.",
+    "key_provisions": [
+      "Total Prohibition on Child Employment Below 14 Years",
+      "Ban on Adolescent Labour (14–18 Years) in Hazardous Occupations and Processes",
+      "Regulated Working Hours, Overtime Bans, and Safety Standards for Adolescents",
+      "Child and Adolescent Labour Rehabilitation and Welfare Fund",
+      "Cognizable Criminal Penalties with Imprisonment and Substantial Fines",
+      "Inspection and Enforcement Powers of District Magistrates and Labour Officers"
+    ],
+    "key_topics": [
+      "Child Rights",
+      "Child Labour Prohibition",
+      "Adolescent Protection",
+      "Hazardous Occupations",
+      "Labour Enforcement",
+      "Child Rehabilitation"
+    ]
+  },
+  "THE CONSTITUTION OF INDIA.pdf": {
+    "filename": "THE CONSTITUTION OF INDIA.pdf",
+    "title": "The Constitution of India",
+    "short_name": "Constitution of India",
+    "act_number": "Supreme Organic Law of India",
+    "enactment_year": 1950,
+    "category": "CONSTITUTIONAL LAW",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 402,
+    "replaces_or_amends": "Government of India Act, 1935 and Indian Independence Act, 1947",
+    "summary": "Supreme law of India establishing fundamental rights, directive principles, judiciary structures, executive powers, federal relations, and constitutional writs.",
+    "detailed_description": "The Constitution of India is the supreme legal framework of the sovereign, socialist, secular, democratic republic of India. It enshrines Fundamental Rights (Articles 12-35) including Equality (Art 14), Freedoms (Art 19), and Right to Life & Personal Liberty (Art 21); outlines Directive Principles of State Policy; establishes the trichotomy between Legislature, Executive, and Judiciary; and confers extraordinary writ jurisdiction to the Supreme Court (Art 32) and High Courts (Art 226).",
+    "key_provisions": [
+      "Preamble and Basic Structure Doctrine",
+      "Fundamental Rights (Articles 14, 19, 21, and 32)",
+      "Directive Principles of State Policy (Part IV) & Fundamental Duties (Part IVA)",
+      "Structure and Powers of Union and State Executives and Legislatures",
+      "Integrated Judicial System: Supreme Court, High Courts, and Subordinate Courts",
+      "Constitutional Writs: Habeas Corpus, Mandamus, Prohibition, Certiorari, Quo Warranto",
+      "Constitutional Amendment Procedures (Article 368)"
+    ],
+    "key_topics": [
+      "Constitutional Law",
+      "Fundamental Rights",
+      "Directive Principles",
+      "Writ Jurisdiction",
+      "Separation of Powers",
+      "Federalism"
+    ]
+  },
+  "THE CONSUMER PROTECTION ACT, 2019.pdf": {
+    "filename": "THE CONSUMER PROTECTION ACT, 2019.pdf",
+    "title": "The Consumer Protection Act, 2019",
+    "short_name": "Consumer Protection Act",
+    "act_number": "Act No. 35 of 2019",
+    "enactment_year": 2019,
+    "category": "CONSUMER RIGHTS",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 40,
+    "replaces_or_amends": "Consumer Protection Act, 1986",
+    "summary": "Statutory rights of consumers, e-commerce regulations, product liability claims, Central Consumer Protection Authority (CCPA), and dispute adjudication across commissions.",
+    "detailed_description": "The Consumer Protection Act, 2019 modernises consumer protection in India for the digital age. It establishes the Central Consumer Protection Authority (CCPA) to investigate unfair trade practices, introduces strict product liability actions against manufacturers, sellers, and service providers, regulates misleading advertisements and celebrity endorsements, covers direct selling and e-commerce platforms, and creates a three-tier pecuniary dispute adjudication system with mediation integration.",
+    "key_provisions": [
+      "Consumer Rights against Unfair Trade Practices & Restrictive Practices",
+      "Central Consumer Protection Authority (CCPA) Investigation & Recall Powers",
+      "Strict Product Liability Actions for Defective Goods or Deficient Services",
+      "Three-Tier Dispute Redressal: District, State, and National Commissions",
+      "E-Commerce Consumer Protection Rules and Disclosure Mandates",
+      "Mediation Cells Attached to Consumer Commissions for Amicable Settlement"
+    ],
+    "key_topics": [
+      "Consumer Protection",
+      "Product Liability",
+      "Unfair Trade Practices",
+      "E-Commerce Regulations",
+      "Consumer Disputes",
+      "CCPA Powers"
+    ]
+  },
+  "THE DIGITAL PERSONAL DATA PROTECTION ACT, 2023.pdf": {
+    "filename": "THE DIGITAL PERSONAL DATA PROTECTION ACT, 2023.pdf",
+    "title": "The Digital Personal Data Protection Act, 2023",
+    "short_name": "DPDP Act",
+    "act_number": "Act No. 22 of 2023",
+    "enactment_year": 2023,
+    "category": "CYBER & DATA PRIVACY",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 21,
+    "replaces_or_amends": "Section 43A of the Information Technology Act, 2000",
+    "summary": "Comprehensive legal framework for processing digital personal data, consent mechanisms, Data Principal rights, Data Fiduciary obligations, and hefty non-compliance penalties.",
+    "detailed_description": "The Digital Personal Data Protection Act, 2023 governs the lawful processing of digital personal data in India. It establishes a consent-centric framework with specific duties for Data Fiduciaries, grants enforceable rights to Data Principals (access, correction, erasure, and grievance redressal), imposes strict safeguards for children's data, enables cross-border data transfers subject to government notifications, and establishes the Data Protection Board of India with authority to levy penalties up to Rs 250 crores.",
+    "key_provisions": [
+      "Free, Specific, Informed, Unconditional Consent & Notice Requirements",
+      "Rights of Data Principals: Access, Correction, Erasure, and Grievance Redressal",
+      "Obligations of Data Fiduciaries & Significant Data Fiduciaries (SDF)",
+      "Enhanced Protection and Ban on Tracking/Targeting Children's Data",
+      "Cross-Border Transfer of Digital Personal Data Regulations",
+      "Establishment of Data Protection Board of India (DPBI) and Monetary Penalties"
+    ],
+    "key_topics": [
+      "Data Privacy",
+      "Digital Personal Data",
+      "Data Protection Board",
+      "Consent Management",
+      "Data Fiduciaries",
+      "DPDP Act 2023"
+    ]
+  },
+  "THE DOWRY PROHIBITION ACT, 1961.pdf": {
+    "filename": "THE DOWRY PROHIBITION ACT, 1961.pdf",
+    "title": "The Dowry Prohibition Act, 1961",
+    "short_name": "Dowry Prohibition Act",
+    "act_number": "Act No. 28 of 1961",
+    "enactment_year": 1961,
+    "category": "WOMEN'S RIGHTS & PROTECTION",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 6,
+    "replaces_or_amends": "None (Special penal enactment)",
+    "summary": "Prohibits demanding, giving, or taking of dowry in connection with marriage, nullifies dowry agreements, and mandates transfer of dowry benefits to the woman or heirs.",
+    "detailed_description": "The Dowry Prohibition Act, 1961 penalises the giving, taking, or demanding of dowry directly or indirectly in consideration of marriage. It renders any agreement for giving or taking dowry void, specifies exceptions for customary gifts recorded in statutory lists, mandates that any dowry received must be transferred to the woman for her benefit within specified timelines, shifts the burden of proof onto the accused, and provides for Dowry Prohibition Officers.",
+    "key_provisions": [
+      "Comprehensive Definition of Dowry (Section 2)",
+      "Penalty for Giving, Taking, or Abetting Dowry (Minimum 5 Years Imprisonment)",
+      "Penalty for Demanding Dowry Directly or Indirectly (Section 4)",
+      "Agreements for Giving or Taking Dowry Declared Void (Section 5)",
+      "Dowry Property Held for the Benefit of Wife or Her Heirs (Section 6)",
+      "Cognizance of Offences, Non-Bailable Nature, and Reversed Burden of Proof"
+    ],
+    "key_topics": [
+      "Dowry Prohibition",
+      "Women Protection",
+      "Matrimonial Offences",
+      "Anti-Dowry Law",
+      "Burden of Proof",
+      "Spousal Rights"
+    ]
+  },
+  "THE INDIAN CONTRACT ACT, 1872.pdf": {
+    "filename": "THE INDIAN CONTRACT ACT, 1872.pdf",
+    "title": "The Indian Contract Act, 1872",
+    "short_name": "Contract Act",
+    "act_number": "Act No. 9 of 1872",
+    "enactment_year": 1872,
+    "category": "CONTRACT & COMMERCIAL",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 53,
+    "replaces_or_amends": "Pre-colonial common law rules of contract",
+    "summary": "Governs formation, performance, and enforceability of contracts, lawful consideration, free consent, breach remedies, liquidated damages, indemnity, guarantee, bailment, and agency.",
+    "detailed_description": "The Indian Contract Act, 1872 is the foundational cornerstone of commercial and civil law in India. It codifies the law relating to offer, acceptance, consideration, capacity of parties, and free consent (vitiated by coercion, undue influence, fraud, misrepresentation, or mistake). It outlines void and voidable contracts, contingent contracts, rules governing performance and discharge, measures of compensatory damages for breach of contract, as well as special contracts including indemnity, guarantee, bailment, pledge, and agency.",
+    "key_provisions": [
+      "Offer, Acceptance, Lawful Consideration, and Enforceability (Sections 2–10)",
+      "Free Consent: Coercion, Undue Influence, Fraud, Misrepresentation, and Mistake",
+      "Void Agreements, Agreements in Restraint of Trade, Marriage, or Legal Proceedings",
+      "Performance and Discharge of Contracts & Doctrine of Frustration (Section 56)",
+      "Remedies and Compensation for Breach of Contract (Section 73 & 74)",
+      "Special Contracts: Indemnity, Guarantee, Bailment, Pledge, and Agency"
+    ],
+    "key_topics": [
+      "Contract Law",
+      "Commercial Agreements",
+      "Breach of Contract",
+      "Damages & Compensation",
+      "Indemnity & Guarantee",
+      "Bailment & Agency"
+    ]
+  },
+  "THE INFORMATION TECHNOLOGY ACT, 2000.pdf": {
+    "filename": "THE INFORMATION TECHNOLOGY ACT, 2000.pdf",
+    "title": "The Information Technology Act, 2000",
+    "short_name": "IT Act",
+    "act_number": "Act No. 21 of 2000",
+    "enactment_year": 2000,
+    "category": "CYBER & TECH LAW",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 36,
+    "replaces_or_amends": "Amended by Information Technology (Amendment) Act, 2008",
+    "summary": "Legal framework for electronic commerce, digital signatures, data privacy, cyber offenses, electronic governance, and intermediary liability.",
+    "detailed_description": "The Information Technology Act, 2000 accords legal recognition to electronic records, digital signatures, and e-commerce transactions in India. It penalises cybercrimes such as hacking, identity theft, cyber terrorism, publishing obscene or sexually explicit material electronically, and child pornography. It also regulates intermediary liability (safe harbour under Section 79 with due diligence guidelines), powers of blocking and interception for public order, and establishes the Cyber Regulations Appellate framework.",
+    "key_provisions": [
+      "Legal Recognition of Electronic Documents & Digital Signatures",
+      "Electronic Governance & Acceptance of Digital Filings by Government Authorities",
+      "Cyber Crimes: Hacking, Identity Theft, Cheating by Impersonation, and Cyber Terrorism",
+      "Obscenity and Child Sexual Abuse Material (CSAM) Penal Provisions",
+      "Intermediary Liability & Safe Harbour Under Section 79",
+      "Government Powers of Website Blocking, Interception, and Decryption"
+    ],
+    "key_topics": [
+      "Cyber Law",
+      "Electronic Commerce",
+      "Digital Signatures",
+      "Cyber Crime & Penalties",
+      "Intermediary Liability",
+      "IT Act 2000"
+    ]
+  },
+  "THE LEGAL SERVICES AUTHORITIES ACT, 1987.pdf": {
+    "filename": "THE LEGAL SERVICES AUTHORITIES ACT, 1987.pdf",
+    "title": "The Legal Services Authorities Act, 1987",
+    "short_name": "Legal Services Act",
+    "act_number": "Act No. 39 of 1987",
+    "enactment_year": 1987,
+    "category": "LEGAL AID & ACCESS TO JUSTICE",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 25,
+    "replaces_or_amends": "Statutory implementation of Article 39A of the Constitution",
+    "summary": "Constitutes legal services authorities (NALSA, SLSA, DLSA) to provide free and competent legal services to weaker sections and establishes Lok Adalats for dispute settlement.",
+    "detailed_description": "The Legal Services Authorities Act, 1987 gives statutory effect to Article 39A of the Constitution of India, guaranteeing free and competent legal services to the underprivileged, women, children, undertrial prisoners, victims of disasters, and low-income citizens. It sets up the National Legal Services Authority (NALSA), State Legal Services Authorities (SLSA), District Legal Services Authorities (DLSA), and Taluk Legal Services Committees. It also establishes Lok Adalats and Permanent Lok Adalats whose awards have the force of civil court decrees with finality.",
+    "key_provisions": [
+      "Free Legal Aid Eligibility Criteria (SC/ST, Women, Children, Custodial Detainees, Low Income)",
+      "Constitution of NALSA, State Legal Services Authorities, and District Legal Aid Clinics",
+      "Organization, Jurisdiction, and Powers of Lok Adalats",
+      "Legal Status and Enforceability of Lok Adalat Awards (Equivalent to Civil Court Decree)",
+      "Establishment of Permanent Lok Adalats for Public Utility Services",
+      "Legal Literacy, Awareness Camps, and Pre-Litigation Dispute Conciliation"
+    ],
+    "key_topics": [
+      "Legal Aid",
+      "Access to Justice",
+      "NALSA",
+      "Lok Adalat",
+      "Free Legal Representation",
+      "Dispute Conciliation"
+    ]
+  },
+  "THE PROTECTION OF WOMEN FROM DOMESTIC VIOLENCE ACT, 2005.pdf": {
+    "filename": "THE PROTECTION OF WOMEN FROM DOMESTIC VIOLENCE ACT, 2005.pdf",
+    "title": "The Protection of Women from Domestic Violence Act, 2005",
+    "short_name": "Domestic Violence Act (PWDVA)",
+    "act_number": "Act No. 43 of 2005",
+    "enactment_year": 2005,
+    "category": "WOMEN'S RIGHTS & PROTECTION",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 12,
+    "replaces_or_amends": "None (Special civil remedy enactment)",
+    "summary": "Civil remedies and immediate relief for female victims of physical, sexual, verbal, emotional, and economic abuse in domestic relationships, including protection and residence orders.",
+    "detailed_description": "The Protection of Women from Domestic Violence Act, 2005 provides effective, time-bound legal protection for women against domestic abuse occurring within shared households. It defines domestic violence broadly to include physical, sexual, verbal, emotional, and economic abuse. It empowers Magistrates to pass immediate ex-parte orders, protection orders against violence, residence orders safeguarding the woman's right to live in the shared household, monetary relief, custody orders for children, and compensation orders, aided by Protection Officers and Service Providers.",
+    "key_provisions": [
+      "Expansive Definition of Domestic Violence (Physical, Sexual, Verbal, Emotional, Economic)",
+      "Right to Reside in Shared Household (Section 17)",
+      "Protection Orders Preventing Harassment, Communication, or Entry by Respondent",
+      "Monetary Relief for Medical Expenses, Loss of Earnings, and Maintenance",
+      "Temporary Custody Orders for Children and Compensation Orders for Mental Agony",
+      "Role of Protection Officers, Service Providers, and Mandatory 60-Day Disposal of Applications"
+    ],
+    "key_topics": [
+      "Domestic Violence",
+      "Women Protection",
+      "Shared Household Rights",
+      "Protection Orders",
+      "Maintenance & Relief",
+      "PWDVA 2005"
+    ]
+  },
+  "THE SEXUAL HARASSMENT OF WOMEN AT WORKPLACE(PREVENTION, PROHIBITION AND REDRESSAL) ACT, 2013.pdf": {
+    "filename": "THE SEXUAL HARASSMENT OF WOMEN AT WORKPLACE(PREVENTION, PROHIBITION AND REDRESSAL) ACT, 2013.pdf",
+    "title": "The Sexual Harassment of Women at Workplace (Prevention, Prohibition and Redressal) Act, 2013",
+    "short_name": "POSH Act",
+    "act_number": "Act No. 14 of 2013",
+    "enactment_year": 2013,
+    "category": "WOMEN'S RIGHTS & PROTECTION",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 14,
+    "replaces_or_amends": "Codified Supreme Court Vishaka Guidelines (1997)",
+    "summary": "Comprehensive framework for prevention, prohibition, and redressal of sexual harassment of women at workplaces, mandating Internal Committees (IC) and Local Committees (LC).",
+    "detailed_description": "The POSH Act, 2013 establishes a robust mechanism to protect women against sexual harassment in all workplaces—formal, informal, private, and government sectors. It mandates that every employer with 10 or more employees must constitute an Internal Committee (IC) with mandatory external representation. It defines quid pro quo and hostile work environment harassment, outlines a confidential inquiry process compliant with natural justice, allows conciliation upon request, and mandates annual compliance reporting by employers.",
+    "key_provisions": [
+      "Broad Definition of Sexual Harassment and Workplace (Including Remote/Virtual Offices)",
+      "Mandatory Constitution of Internal Committee (IC) with 50% Women & External Member",
+      "Local Committees (LC) at District Level for Small Establishments and Informal Workers",
+      "Time-Bound Inquiry Process (90-Day Inquiry and Natural Justice Safeguards)",
+      "Conciliation Option at Request of the Aggrieved Woman Without Monetary Settlement",
+      "Strict Penalties for Employer Non-Compliance and Annual Reporting Mandates"
+    ],
+    "key_topics": [
+      "POSH Act",
+      "Workplace Safety",
+      "Internal Committee (IC)",
+      "Sexual Harassment Redressal",
+      "Employee Rights",
+      "Employer Compliance"
+    ]
+  },
+  "THE TELECOMMUNICATIONS ACT, 2023.pdf": {
+    "filename": "THE TELECOMMUNICATIONS ACT, 2023.pdf",
+    "title": "The Telecommunications Act, 2023",
+    "short_name": "Telecom Act",
+    "act_number": "Act No. 44 of 2023",
+    "enactment_year": 2023,
+    "category": "TELECOMMUNICATIONS & TECH",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 26,
+    "replaces_or_amends": "Indian Telegraph Act, 1885 and Indian Wireless Telegraphy Act, 1933",
+    "summary": "Modern legal framework for telecommunication services, spectrum assignment, Right of Way (RoW), national security interception, and digital consumer protection.",
+    "detailed_description": "The Telecommunications Act, 2023 replaces colonial telegraph laws to establish a unified statutory regime for telecommunication networks, services, and spectrum allocation in India. It provides for administrative and auction-based spectrum assignment, simplifies authorizations, institutionalizes a clear statutory framework for Right of Way (RoW) on public and private property, introduces measures to curb spam and fraud via digital-by-default mechanisms, and empowers the government in emergencies or public safety matters.",
+    "key_provisions": [
+      "Spectrum Assignment Mechanisms (Auctions & Administrative Allocations for Public/Satellite Services)",
+      "Unified Authorization Framework Replacing Complex Licensing Regimes",
+      "Statutory Right of Way (RoW) Regime for Telecom Infrastructure Deployment",
+      "National Security, Interception, and Public Emergency Temporary Possession Powers",
+      "Protection of Users Against Unsolicited Commercial Messages and Spoofing",
+      "Tiered Adjudication Mechanism and Telecom Digital Dispute Redressal Portal"
+    ],
+    "key_topics": [
+      "Telecommunications Law",
+      "Spectrum Allocation",
+      "Right of Way (RoW)",
+      "Cyber Security in Telecom",
+      "Digital Redressal",
+      "Telecom Act 2023"
+    ]
+  },
+  "The Code on Social Security, 2020.pdf": {
+    "filename": "The Code on Social Security, 2020.pdf",
+    "title": "The Code on Social Security, 2020",
+    "short_name": "Social Security Code",
+    "act_number": "Act No. 36 of 2020",
+    "enactment_year": 2020,
+    "category": "LABOUR & EMPLOYMENT",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 113,
+    "replaces_or_amends": "Consolidates 9 Central Social Security Acts (EPFO, ESIC, Gratuity, Maternity Benefit, etc.)",
+    "summary": "Consolidates 9 laws on social security to provide universal social security, provident funds, gratuity, health insurance, maternity benefits, and gig/platform worker coverage.",
+    "detailed_description": "The Code on Social Security, 2020 integrates and rationalises Indian statutory social security protections. Notably, it expands social security benefits beyond traditional factory and establishment workers to cover gig workers, platform workers, and unorganised sector workers through dedicated social security funds financed by aggregators. It standardises thresholds for Employees' Provident Fund (EPF), Employees' State Insurance (ESI), Payment of Gratuity (including fixed-term employees on a pro-rata basis), and Maternity Benefits.",
+    "key_provisions": [
+      "Extension of Social Security to Gig Workers, Platform Workers, and Unorganised Labour",
+      "National Social Security Board & Aggregator Contribution Mandates (1–2% of Annual Turnover)",
+      "Gratuity Eligibility for Fixed-Term Employees Pro-Rata Without 5-Year Threshold",
+      "Streamlined Framework for Employees' Provident Fund (EPF) and Employees' State Insurance (ESI)",
+      "Comprehensive Maternity Benefit Protections and Crèche Facility Mandates",
+      "Modernised Inspector-cum-Facilitator Regime and Web-Based Compliance Inspections"
+    ],
+    "key_topics": [
+      "Social Security Code",
+      "Gig & Platform Workers",
+      "Provident Fund (EPF)",
+      "Employee State Insurance (ESI)",
+      "Gratuity & Maternity Benefits",
+      "Labour Law Reform"
+    ]
+  },
+  "The Code on Wages, 2019.pdf": {
+    "filename": "The Code on Wages, 2019.pdf",
+    "title": "The Code on Wages, 2019",
+    "short_name": "Wages Code",
+    "act_number": "Act No. 29 of 2019",
+    "enactment_year": 2019,
+    "category": "LABOUR & EMPLOYMENT",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 32,
+    "replaces_or_amends": "Consolidates Payment of Wages Act, Minimum Wages Act, Payment of Bonus Act, and Equal Remuneration Act",
+    "summary": "Consolidates 4 wage laws, universalises minimum wages and timely payment to all workers, introduces national floor wages, and prohibits gender discrimination in wages.",
+    "detailed_description": "The Code on Wages, 2019 amalgamates the Payment of Wages Act, Minimum Wages Act, Payment of Bonus Act, and Equal Remuneration Act. It eliminates wage ceilings and applies minimum wage protections universally across all employments (organized and unorganized). It mandates the Central Government to fix statutory national floor wages below which state minimum wages cannot fall, enforces gender neutrality in hiring and wages, standardises the definition of wages, and streamlines bonus calculations and wage payment timelines.",
+    "key_provisions": [
+      "Universal Applicability of Minimum Wages Across All Employments and Industries",
+      "National Floor Minimum Wage Determined by Central Government Taking Cost of Living into Account",
+      "Prohibition of Gender Discrimination in Wages, Recruitment, and Conditions of Service",
+      "Standardized Definition of 'Wages' Capping Allowances at 50% of Total Remuneration",
+      "Statutory Entitlement and Thresholds for Annual Payment of Bonus",
+      "Transparent Digital Payment of Wages and Strengthened Recovery Mechanisms"
+    ],
+    "key_topics": [
+      "Code on Wages",
+      "Universal Minimum Wages",
+      "National Floor Wage",
+      "Equal Remuneration",
+      "Annual Bonus",
+      "Timely Wage Payment"
+    ]
+  },
+  "The Industrial Relations Code, 2020.pdf": {
+    "filename": "The Industrial Relations Code, 2020.pdf",
+    "title": "The Industrial Relations Code, 2020",
+    "short_name": "IR Code",
+    "act_number": "Act No. 35 of 2020",
+    "enactment_year": 2020,
+    "category": "LABOUR & EMPLOYMENT",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 68,
+    "replaces_or_amends": "Consolidates Trade Unions Act, 1926; Industrial Employment (Standing Orders) Act, 1946; Industrial Disputes Act, 1947",
+    "summary": "Consolidates 3 major labour laws to govern trade union recognition, standing orders, collective bargaining, dispute resolution mechanisms, and layoff/retrenchment thresholds.",
+    "detailed_description": "The Industrial Relations Code, 2020 consolidates and streamlines laws governing industrial relations, collective bargaining, and dispute resolution in India. It introduces a statutory negotiating union / council mechanism for collective bargaining with employers, raises the prior-permission threshold for lay-offs, retrenchment, and closure to establishments with 300 or more workers, prescribes a mandatory 14-day notice period before strikes or lockouts in all industrial establishments, and sets up two-member Industrial Tribunals for expedited dispute resolution.",
+    "key_provisions": [
+      "Recognition of Sole Negotiating Union (51% Support) or Negotiating Council for Collective Bargaining",
+      "Standing Orders Mandated for Industrial Establishments with 300 or More Workers",
+      "Mandatory 14-Day Notice Period Before Strikes and Lockouts for All Industrial Establishments",
+      "Government Prior Permission for Lay-off, Retrenchment, and Closure Raised to 300 Workers",
+      "Worker Reskilling Fund for Retrenched Employees Contributed by Employers",
+      "Replaced Multi-Tier Labour Courts with Modernised Industrial Tribunals"
+    ],
+    "key_topics": [
+      "Industrial Relations",
+      "Trade Unions",
+      "Collective Bargaining",
+      "Strike Notice Rules",
+      "Retrenchment & Closure",
+      "Industrial Tribunals"
+    ]
+  },
+  "The Motor Vehicles Act, 1988.pdf": {
+    "filename": "The Motor Vehicles Act, 1988.pdf",
+    "title": "The Motor Vehicles Act, 1988",
+    "short_name": "Motor Vehicles Act (MVA)",
+    "act_number": "Act No. 59 of 1988",
+    "enactment_year": 1988,
+    "category": "TRANSPORT & MOTOR VEHICLES",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 176,
+    "replaces_or_amends": "Motor Vehicles Act, 1939 (Significantly amended in 2019)",
+    "summary": "Comprehensive law governing motor vehicle licensing, vehicle registration, road safety standards, traffic violations, strict penalties, and Motor Accident Claims Tribunals (MACT).",
+    "detailed_description": "The Motor Vehicles Act, 1988 regulates road transport and traffic safety across India. Heavily amended in 2019, it introduced stringent penalties for drunk driving, rash driving, and juvenile driving, established electronic monitoring and enforcement, simplified vehicle registration and automated driver licensing, provided statutory protection for Good Samaritans who assist accident victims, and instituted cashless treatment for golden-hour road accident victims alongside streamlined claims adjudication before Motor Accident Claims Tribunals (MACT).",
+    "key_provisions": [
+      "Driver Licensing Protocols, Automated Fitness Testing, and Revocation Standards",
+      "Vehicle Registration, National Transport Register, and Emission/Safety Standards",
+      "Stringent Penalties for Traffic Violations (Drunk Driving, Over-Speeding, Dangerous Driving)",
+      "Juvenile Offence Penalties Holding Guardian / Vehicle Owner Statutorily Liable",
+      "Statutory Good Samaritan Safeguards Protecting Bystanders from Civil and Criminal Liabilities",
+      "Compulsory Third-Party Insurance & Motor Accident Claims Tribunal (MACT) Compensation"
+    ],
+    "key_topics": [
+      "Motor Vehicles Law",
+      "Traffic Violations & Penalties",
+      "Road Safety",
+      "Good Samaritan Rules",
+      "Third-Party Insurance",
+      "MACT Compensation"
+    ]
+  },
+  "The Occupational Safety, Health and Working.pdf": {
+    "filename": "The Occupational Safety, Health and Working.pdf",
+    "title": "The Occupational Safety, Health and Working Conditions Code, 2020",
+    "short_name": "OSH Code",
+    "act_number": "Act No. 37 of 2020",
+    "enactment_year": 2020,
+    "category": "LABOUR & EMPLOYMENT",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 84,
+    "replaces_or_amends": "Consolidates 13 Central Labour Enactments (Factories Act, Mines Act, Contract Labour Act, etc.)",
+    "summary": "Consolidates 13 labour laws on workplace safety, occupational health, welfare amenities, women's night shift permissions with consent, and inter-state migrant worker rights.",
+    "detailed_description": "The Occupational Safety, Health and Working Conditions Code, 2020 harmonises and unifies standards for workplace safety, health, and working conditions across factories, mines, docks, construction sites, and transport establishments. It guarantees free annual health checkups for workers above a certain age, permits employment of women in all types of establishments and night shifts subject to consent and safety arrangements, creates portable statutory benefits and journey allowances for inter-state migrant workers, and establishes National and State Occupational Safety Boards.",
+    "key_provisions": [
+      "Universal Health, Safety, and Sanitation Standards Across Factories, Mines, and Commercial Sites",
+      "Permitting Women to Work Night Shifts (7 PM to 6 AM) with Voluntary Consent and Safety Measures",
+      "Statutory Protections, Portability of Benefits, and Toll-Free Helpline for Inter-State Migrant Workers",
+      "Single Electronic Registration, Single Return, and Unified Licensing Framework for Establishments",
+      "Mandatory Appointment of Safety Committees and Safety Officers in Hazardous Workplaces",
+      "Overtime Wage Entitlements at Double the Normal Wage Rate"
+    ],
+    "key_topics": [
+      "OSH Code 2020",
+      "Workplace Safety",
+      "Occupational Health",
+      "Migrant Worker Rights",
+      "Women Night Shift Safety",
+      "Factory Standards"
+    ]
+  },
+  "The Press Council Act, 1978.pdf": {
+    "filename": "The Press Council Act, 1978.pdf",
+    "title": "The Press Council Act, 1978",
+    "short_name": "Press Council Act",
+    "act_number": "Act No. 37 of 1978",
+    "enactment_year": 1978,
+    "category": "MEDIA & PRESS REGULATION",
+    "status": "System Indexed",
+    "tier": "Foundational",
+    "page_count": 12,
+    "replaces_or_amends": "Press Council Act, 1965",
+    "summary": "Establishes the Press Council of India to preserve the freedom of the press, maintain and improve journalistic ethics, and adjudicate press complaints.",
+    "detailed_description": "The Press Council Act, 1978 provides for the establishment of the Press Council of India (PCI) as an autonomous, quasi-judicial watchdog. Its statutory mandate is to preserve freedom of the press and maintain high journalistic standards. The Council is vested with civil court powers to inquire into complaints against newspapers, editors, journalists, or public authorities attempting to stifle journalistic independence, censor reporting, or breach journalistic ethics, issuing warnings, admonishments, or censures.",
+    "key_provisions": [
+      "Autonomous Constitution of Press Council of India with Judicial and Journalistic Representation",
+      "Objects to Preserve Press Freedom and Independence of Newspapers and News Agencies",
+      "Formulation of Journalistic Ethics, Codes of Conduct, and Professional Standards",
+      "Inquiring into Complaints of Journalistic Misconduct or Attacks on Free Speech",
+      "Powers of Civil Court: Summoning Witnesses, Inspecting Documents, and Taking Evidence",
+      "Power to Warn, Admonish, or Censure Newspapers, Editors, or Journalists"
+    ],
+    "key_topics": [
+      "Press Freedom",
+      "Media Law",
+      "Journalistic Ethics",
+      "Press Council of India",
+      "Quasi-Judicial Powers",
+      "Censure & Admonishment"
+    ]
+  }
+}

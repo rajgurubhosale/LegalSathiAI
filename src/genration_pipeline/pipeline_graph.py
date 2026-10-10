@@ -38,6 +38,9 @@ def build_graph(pipeline) -> StateGraph:
         }
         
     def generate(state, config: RunnableConfig):
+
+            
+
         answer = pipeline.chain.invoke({
             "context": state["context"],
             "chat_history": state.get("messages", [])[-HISTORY_WINDOW:],

@@ -38,7 +38,6 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],db: Annotated
 
 
 
-
 CurrentUser = Annotated[dict, Depends(get_current_user)]
 
 def require_role(*roles: str):

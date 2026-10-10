@@ -29,7 +29,7 @@ dependencies = [
     "pyyaml>=6.0.3",
     "rank-bm25>=0.2.2",
     "requests>=2.32,<3",
-    "sentence-transformers>=6.1.0",
+    "sentence-transformers==6.1.0",
     "streamlit[pdf]>=1.57",
     "tiktoken>=0.14.0",
     "torch",
@@ -39,6 +39,7 @@ dependencies = [
     "pwdlib[argon2]>=0.3.1",
     "python-multipart>=0.0.32",
     "pydantic[email]>=2.13.4",
+    "langgraph-checkpoint-postgres>=3.1.2",
 ]
 
 [tool.uv.sources]

@@ -2,15 +2,13 @@ import json
 import sys
 from pathlib import Path
 from typing import List
-
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
 from langchain_huggingface import HuggingFaceEmbeddings
-
 from src.exception import MyException
 from src.logger import logger
 from src.utils.main_utils import read_config_file
-
+import torch
 
 class VectorStoreManager:
     """Handles creation and management of the Chroma vector store."""
@@ -20,7 +18,7 @@ class VectorStoreManager:
         self.persist_directory = persist_directory
         self.embedding_model = HuggingFaceEmbeddings(
             model_name=embedding_model_name,
-            encode_kwargs={"normalize_embeddings": True},
+            encode_kwargs={"normalize_embeddings": True, "batch_size": 32},
         )
         self.store = self._get_or_create_collection()
 

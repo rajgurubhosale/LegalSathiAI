@@ -15,7 +15,7 @@ class LegalSaathiPipeline:
     Import this anywhere — CLI, eval scripts, notebooks — instead of
     re-wiring retriever/reranker/generator each time.
     """
-    def __init__(self, top_n=None, rerank_k=None, min_score=None):
+    def __init__(self, top_n=None, rerank_k=None, min_score=None,groq_api_key=None):
         self.config = read_config_file()
         cfg = self.config["retrieval"]
         self.top_n = cfg["top_n"] if top_n is None else top_n
@@ -25,7 +25,8 @@ class LegalSaathiPipeline:
         
         self.retriever = Retrieval(top_n=self.top_n)
         self.reranker = Reranker(rerank_k=self.rerank_k)
-        self.model = get_model()
+        self.model = get_model(api_key=groq_api_key)
+
         self.chain = system_msg | self.model | StrOutputParser()
         self.decomposition_model = self.model.with_structured_output(
             SubQueriesSchema,

@@ -3,18 +3,22 @@
 .venv/
 legalAI/
 *.egg-info/
-
+.streamlit
 # Python cache
 __pycache__/
 *.py[cod]
-
+.uv-cache
+CHUNKS
 # Logs and evaluation artifacts
 /logs/
 /.deepeval/
 /evalution_set/
 /diagnostics/
-
+legal_saathi_gte_modernbert_800_100
+legal_saathi_gte_modernbert_1100_100
+legal_saathi_oct_1100_100
 # Local data and vector stores
+src/evalutions/evaluation_results_modernbert
 /PDF_DATA/
 /data/
 /vectorstore/
@@ -23,14 +27,16 @@ __pycache__/
 CHUNKS/processed
 # Local notebooks and frontend
 /notebook/
+src/data_ingestion/chunking_experiment.py
 /notebooks/
 updates.md
 .pytest_cache
-
+src/evalutions/evalution_script.py
 # Experimental scripts
 /src/evalutions/full_dataset_evaluator.py
 tests
 /src/rag_retrieval/exp.py
+src/evalutions/final_evalution_set.csv
 /src/rag_retrieval/original.py
 
 # Local images and notes

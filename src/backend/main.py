@@ -9,17 +9,21 @@ from src.genration_pipeline.pipeline import LegalSaathiPipeline
 from src.logger import logger
 from src.genration_pipeline.pipeline_graph import build_graph
 from langgraph.checkpoint.postgres import PostgresSaver
+from langchain_groq import ChatGroq
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    pool.open(wait=True)
     try:
-        pool.open(wait=True)
         pipeline = LegalSaathiPipeline()
         pipeline.warmup()
 
+        # small, cheap model just for summaries
+        summarizer = ChatGroq(model="llama-3.1-8b-instant", temperature=0, max_tokens=200)
+
         with PostgresSaver.from_conn_string(DATABASE_URL) as saver:
             saver.setup()
-            app.state.rag_app = build_graph(pipeline).compile(checkpointer=saver)
+            app.state.rag_app = build_graph(pipeline, summarizer).compile(checkpointer=saver)
             logger.info("LegalSaathi API is ready.")
             yield
     finally:

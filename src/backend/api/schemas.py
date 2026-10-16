@@ -35,7 +35,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     chat_id: UUID
-    chat_history: list[ChatMessage] = Field(default_factory=list, max_length=20)
+    chat_history: list[ChatMessage] = Field(default_factory=list)
 
 class Source(BaseModel):
     act_name: str | None = None

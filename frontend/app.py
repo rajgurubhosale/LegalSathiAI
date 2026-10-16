@@ -13,7 +13,7 @@ sys.path.insert(0, str(ROOT))
 
 from frontend.api import (
     ask_question, create_chat_draft, get_profile, list_chats, list_documents,
-    load_messages, login, read_document, recent_history, register,
+    load_messages, login, read_document, register,
 )
 from frontend.session import sync_browser_session
 
@@ -173,7 +173,7 @@ def new_chat():
         if chat.get("is_draft") and not chat["messages"]:
             del st.session_state.chats[old_id]
     st.session_state.chats[chat_id] = {
-        "title": "New chat", "messages": [], "history": [], "is_draft": True,
+        "title": "New chat", "messages": [], "is_draft": True,
     }
     st.session_state.current_chat = chat_id
     st.session_state.active_view = "chat"
@@ -187,7 +187,7 @@ def switch_chat(chat_id, title):
         chat_request_failed(error, "Could not load this chat. Please try again.")
         return
     st.session_state.chats[chat_id] = {
-        "title": title, "messages": messages, "history": [], "is_draft": False,
+        "title": title, "messages": messages, "is_draft": False,
     }
     st.session_state.current_chat = chat_id
     st.session_state.active_view = "chat"
@@ -370,7 +370,7 @@ if st.session_state.get("active_view") == "vault":
                     tier = doc.get("tier", "Foundational")
                     cat_slug = f"cat-{re.sub(r'[^a-z0-9]+', '-', category.lower()).strip('-')}"
 
-                    with column, st.container(key=f"vault_card_{pdf}", border=True, height=295, gap="small"):
+                    with column, st.container(key=f"vault_card_{pdf}", border=True, height=320, gap="small"):
                         st.html(f"""
                             <div class="vault-card-top">
                                 <span class="vault-badge {cat_slug}">{escape(category)}</span>
@@ -433,10 +433,6 @@ if question:
             "content": result.get("answer", ""),
             "sources": result.get("sources", []),
         }
-        chat["history"] = recent_history(chat["history"] + [
-            {"role": "user", "content": question},
-            {"role": "assistant", "content": result.get("answer", "")},
-        ])
     except requests.Timeout:
         reply = {"role" : "assistant", "content": "The request timed out. Please try again shortly."}
     except requests.ConnectionError:

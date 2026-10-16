@@ -2,6 +2,7 @@
 embedding:
   model_name: Octen/Octen-Embedding-0.6B
 
+
 #vectorstore:
 #  type: Chroma
 #  db_name: legal_saathi
@@ -10,8 +11,8 @@ embedding:
 
 ingestion:
   pdf_folder: "D:/LegalSaathi AI/PDF_DATA"
-  chunks_path: "D:/LegalSaathi AI/CHUNKS/processed/chunks.jsonl"
-  chunk_size: 1200
+  chunks_path: "D:/LegalSaathi AI/CHUNKS/1100_100/chunks.jsonl"
+  chunk_size: 1100
   chunk_overlap: 100
   labour_pdfs:
   - "The Code on Social Security, 2020.pdf"
@@ -21,26 +22,28 @@ ingestion:
 
 vectorstore:
   type: Chroma
-  db_name: legal_saathi_octen_1200
-  db_path: 'D:\LegalSaathi AI\vectorstore_octen_1200'
+  db_name: legal_saathi_oct_1100_100
+  db_path: 'D:/LegalSaathi AI/legal_saathi_oct_1100_100'
 
 retrieval:
   top_n: 40
-  rerank_k: 6
-  min_score: 0.0
+  rerank_k: 5
+  min_score: null
   max_chunks: 4
 
 rerank:
   model_name: "Qwen/Qwen3-Reranker-0.6B"
 
+  
 evaluation:
   threshold: 0.7
-
-  dataset_path: 'D:\LegalSaathi AI\evalution_set\final_evalution_set.csv'
-  output_path: 'D:\LegalSaathi AI\evalution_set\results_v6_corrected.csv'
+  dataset_path: 'D:\LegalSaathi AI\src\evalutions\final_evalution_set.csv'
+  output_path: 'D:\LegalSaathi AI\src\evalutions\evaluation_results_modernbert\oct_qwen_1100_100.csv'   # overridden by the script below
+  
+  
   top_n: 40
-  rerank_k: 6
-  min_score: 0.0
+  rerank_k: 5
+  min_score: 0.1
   gen_workers: 1
   max_concurrent: 5
 

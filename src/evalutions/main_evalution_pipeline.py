@@ -100,17 +100,18 @@ class MeshJudge(DeepEvalBaseLLM):
 
 class LegalSaathiEvaluator:
 
-    def __init__(self,config):
+    def __init__(self, config, groq_api_key=None, judge_api_key=None):
             self.config = config
             
             evalution_config = config['evaluation']
 
             judge_config = evalution_config['judge']
-            
-            api_key = os.getenv("MESH_DEEP_SEEK_FLASH")
+           
+            api_key = judge_api_key or os.getenv(judge_config.get("api_key_env", "MESH_DEEP_SEEK_FLASH"))
             if not api_key:
-                raise ValueError("MESH_DEEP_SEEK_FLASH is missing from .env")
-    
+                raise ValueError("Judge API key missing: pass judge_api_key or set the env var.")
+
+            
             self.pipeline = LegalSaathiPipeline(
                 top_n=evalution_config["top_n"],
                 rerank_k=evalution_config["rerank_k"],

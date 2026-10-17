@@ -1,88 +1,110 @@
-from typing import Annotated, TypedDict
+from concurrent.futures import ThreadPoolExecutor
+from typing import Annotated
 
-from langchain_core.messages import AIMessage, HumanMessage
+from langchain.agents import AgentState, create_agent
+from langchain.agents.middleware import SummarizationMiddleware
+from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
-from langgraph.graph import StateGraph, START, END
-from langgraph.graph.message import add_messages
+from langchain_core.tools import tool
+from langgraph.types import Command
+
+from src.genration_pipeline.new_prompts import SYSTEM_PROMPT as AGENT_SYSTEM_PROMPT
 
 SUMMARIZE_AFTER = 8   
 KEEP_RECENT = 4        
 
-
-class GraphState(TypedDict, total=False):
-    question: str
-    messages: Annotated[list, add_messages]  
-    summary: str                             
-    summarized_count: int                    
-    sub_queries: list[str]
-    context: str
-    sources: list[dict]
-    answer: str
+# ---------- State ----------
+def collect_sources(old, new):
+    if not new:                    # [] = reset for a new question
+        return []
+    return (old or []) + new       # several searches in one turn add up
 
 
-def build_graph(pipeline, summarizer) -> StateGraph:
-    """summarizer: a small, cheap chat model. Returns an uncompiled graph."""
+class LegalState(AgentState):
+    sources: Annotated[list[dict], collect_sources]
 
-    def summarize(state: GraphState):
-        msgs = state.get("messages", [])
-        start = state.get("summarized_count", 0)
 
-        # runs the summarizer only when enough new messages have piled up
-        if len(msgs) - start <= SUMMARIZE_AFTER:
-            return {}
+def create_search_tool(pipeline):
+    @tool
+    def search_legal_documents(query: str, config: RunnableConfig):
+        """
+        Search Indian statutory acts (BNS, BSA, BNSS, Labour Codes, RTI, RERA)
+        and the user's uploaded private documents (contracts, agreements, notices).
+        Use for questions about laws, legal rights, or the user's files.
+        Pass one focused, standalone query; call again for a separate legal issue.
+        Do NOT use for greetings, thanks, or questions about this chat's history."""
 
-        cut = len(msgs) - KEEP_RECENT
-        text = "".join(
-            f"{getattr(m, 'type', 'unknown')}: {getattr(m, 'content', '')}\n"
-            for m in msgs[start:cut]
+        # 1. Safely extract user_id injected from backend config
+        user_id = config.get("configurable", {}).get("user_id")
+        vault = getattr(pipeline, "vault", None)
+        use_vault = bool(user_id and vault)
+
+        # 2. Retrieve main acts and vault files in parallel
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            main_f = pool.submit(pipeline.retriever.hybrid_retrieve_invoke, query)
+            vault_f = pool.submit(vault.search, query, user_id, 10) if use_vault else None
+            docs = main_f.result() + (vault_f.result() if vault_f else [])
+
+        if not docs:
+            return Command(
+                update={"sources": []},
+                content="No relevant legal or vault documents found.",
+            )
+
+        ranked = pipeline.reranker.rerank(docs=docs, query=query)
+        top = [doc for _, doc in ranked[:pipeline.max_chunks]]
+
+        chunks, sources = [], []
+        for d in top:
+            m = d.metadata
+            if "doc_name" in m:
+                name, pages, kind = m["doc_name"], [m.get("page_no", 1)], "Your document"
+            else:
+                name, pages, kind = m.get("act_name", "Statute"), pipeline.document_pages(d), "Act"
+            chunks.append(f"SOURCE: {kind} | {name} | PDF page {pages[0]}\n{d.page_content}")
+            sources.append({"act_name": name, "pages": pages})
+
+        context = "\n\n".join(chunks)
+        return Command(
+            update={"sources": sources},
+            content=context,
         )
-        summary = summarizer.invoke(
-            "Update the summary of this conversation in 2-3 lines. Keep names, numbers, "
-            "decisions, and Act or section numbers exactly as written.\n\n"
-            f"Existing summary:\n{state.get('summary') or '(none)'}\n\n"
-            f"New messages:\n{text}"
-        ).content
-        return {"summary": summary, "summarized_count": cut}
 
-    def decompose(state: GraphState):
-        history = state.get("messages", [])[-KEEP_RECENT:]          
-        return {"sub_queries": pipeline.query_decomposition(state["question"], history)}
+    return search_legal_documents
 
-    def retrieve(state: GraphState):
-        docs = pipeline.retrieve_context(
-            state["question"],
-            return_docs=True,                     
-            search_queries=state["sub_queries"],  
-        )
-        return {
-            "context": pipeline.format_context(docs),
-            "sources": [{"act_name": d.metadata.get("act_name"),
-                         "pages": pipeline.document_pages(d)} for d in docs],
-        }
 
-        
-    def generate(state: GraphState, config: RunnableConfig):
-        history = state.get("messages", [])[state.get("summarized_count", 0):]
-        if state.get("summary"):
-            history = [HumanMessage(content=f"Summary of the earlier conversation:\n{state['summary']}")] + history
-        answer = pipeline.chain.invoke({
-            "context": state["context"],
-            "chat_history": history,
-            "question": state["question"],
-        }, config)
-        return {
-            "answer": answer,
-            "messages": [HumanMessage(content=state["question"]), AIMessage(content=answer)],
-        }
+# ---------- Agent (build ONCE at startup) ----------
+def build_agent(pipeline, summarizer, checkpointer=None):
+    return create_agent(
+        model=pipeline.model,
+        tools=[create_search_tool(pipeline)],
+        system_prompt=AGENT_SYSTEM_PROMPT,
+        state_schema=LegalState,
+        middleware=[
+            SummarizationMiddleware(
+                model=summarizer,
+                trigger=("messages", 12),
+                keep=("messages", 6),
+            )
+        ],
+        checkpointer=checkpointer,
+    )
 
-    graph = StateGraph(GraphState)
-    graph.add_node("summarize", summarize)
-    graph.add_node("decompose", decompose)
-    graph.add_node("retrieve", retrieve)
-    graph.add_node("generate", generate)
-    graph.add_edge(START, "summarize")
-    graph.add_edge("summarize", "decompose")
-    graph.add_edge("decompose", "retrieve")
-    graph.add_edge("retrieve", "generate")
-    graph.add_edge("generate", END)
-    return graph
+
+# ---------- Ask ----------
+def ask(agent, question: str, session_id: str, user_id: int) -> dict:
+    result = agent.invoke(
+        {"messages": [HumanMessage(content=question)], "sources": []},  # [] resets sources
+        config={
+            "configurable": {"thread_id": session_id, "user_id": user_id},
+            "recursion_limit": 10,
+        },
+    )
+    return {
+        "answer": result["messages"][-1].content,
+        "sources": result.get("sources", []),  # [] when the agent never searched
+    }
+
+
+# Backward-compatible alias
+build_graph = build_agent

@@ -100,9 +100,9 @@ def chat_messages(chat_id: UUID, http: Request,user=Depends(get_current_user), d
     history = []
 
     for msg in state.values.get("messages",[]):
-
-        if msg.type not in ("human", "ai"):
+        if msg.type not in ("human", "ai") or not msg.content:
             continue
+      
         history.append(
             {"role":"user" if msg.type == "human" else "assistant", "content": msg.content}
 

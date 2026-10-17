@@ -1,8 +1,14 @@
 from langchain_core.messages import AIMessageChunk
+from langchain_core.messages import AIMessageChunk, HumanMessage
 
 
 def make_config(user_id, chat_id: str) -> dict:
-    return {"configurable": {"thread_id": f"{user_id}:{chat_id}"}}
+    return {
+        "configurable": {
+            "thread_id": f"{user_id}:{chat_id}",
+            "user_id": user_id,  
+        }
+    }
 
 def stream_answer(rag_app, user_id, chat_id: str, question: str):
     """Yields ("token", text) for each token, then ("sources", list)."""
@@ -10,14 +16,14 @@ def stream_answer(rag_app, user_id, chat_id: str, question: str):
     config = make_config(user_id, str(chat_id))
     sources = []
 
-    for mode, data in rag_app.stream({"question": question}, config, stream_mode=["messages", "updates"]):
+    for mode, data in rag_app.stream({"messages": [HumanMessage(content=question)], "sources": []},config,stream_mode=["messages", "values"],):
         if mode == "messages":
             chunk, meta = data
-            if meta["langgraph_node"] == "generate" and isinstance(chunk, AIMessageChunk):
-                if chunk.content:
-                    yield "token", chunk.content
-        elif mode == "updates" and "retrieve" in data:
-            sources = data["retrieve"]["sources"]
+            if isinstance(chunk, AIMessageChunk) and chunk.content:
+                yield "token", chunk.content
+
+        elif mode == "values":
+            sources = data.get("sources", [])
 
     yield "sources", sources
 
@@ -45,4 +51,3 @@ def save_chat_if_needed(db, chat_id, user_id, question) -> bool:
         "SELECT 1 FROM chats WHERE id = %s AND user_id = %s",
         (chat_id, user_id),
     ).fetchone() is not None
-

@@ -13,9 +13,7 @@ from src.genration_pipeline.pipeline import LegalSaathiPipeline
 def get_pipeline(request: Request) -> LegalSaathiPipeline:
     return request.app.state.pipeline
 
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],db: Annotated[Connection, Depends(get_db)],) -> dict:
     """ validate the token and user account return user info """
@@ -24,8 +22,16 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],db: Annotated
     try:
         payload = jwt.decode(
             token, SECRET_KEY, algorithms=[ALGORITHM],
-            options={"require": ["sub", "exp"]},
+            options={"require": ["sub", "type", "exp"]},
         )
+        if payload.get("type") != "access":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token type",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+    
+
         user_id = int(payload["sub"])
     except (jwt.InvalidTokenError, KeyError, ValueError):
         raise error

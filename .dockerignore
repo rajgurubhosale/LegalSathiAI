@@ -15,6 +15,6 @@ notebook
 notebooks
 .deepeval
 diagnostics
-src/data_ingestion/
+src/data_ingestion/ 
 src/evalutions/
 tests

@@ -119,3 +119,57 @@ def read_document(filename, token):
     response.raise_for_status()
     return response.content
 
+
+def upload_personal_documents(files, token):
+    """
+    Upload personal documents to the backend.
+    """
+    payload = [("files", (file.name, file.getvalue(), file.type)) for file in files]
+    response = requests.post(
+        url=f"{BACKEND_URL}/upload_documents/",
+        headers={"Authorization": f"Bearer {token}"},
+        files=payload,
+        timeout=(10, 120),
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def list_user_vault_documents(token):
+    response = requests.get(
+        f"{BACKEND_URL}/user/documents",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=(5, 10),
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def read_user_vault_document(doc_id, token):
+    response = requests.get(
+        f"{BACKEND_URL}/user/documents/{doc_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=(5, 30),
+    )
+    response.raise_for_status()
+    return response.content
+
+
+def delete_user_vault_document(doc_id, token):
+    response = requests.delete(
+        f"{BACKEND_URL}/user/documents/{doc_id}",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=(5, 15),
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def clear_user_vault(token):
+    response = requests.delete(
+        f"{BACKEND_URL}/user/vault",
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=(5, 30),
+    )
+    response.raise_for_status()
+    return response.json()

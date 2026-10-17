@@ -13,7 +13,9 @@ sys.path.insert(0, str(ROOT))
 
 from frontend.api import (
     ask_question, create_chat_draft, get_profile, list_chats, list_documents,
-    load_messages, login, read_document, register,
+    list_user_vault_documents, load_messages, login, read_document,
+    read_user_vault_document, register, upload_personal_documents,
+    delete_user_vault_document, clear_user_vault,
 )
 from frontend.session import sync_browser_session
 
@@ -23,7 +25,7 @@ st.html(Path(__file__).with_name("styles.css"))
 
 def sign_out():
     st.session_state.clear_browser_auth = True
-    for key in ("access_token", "username", "chats", "recent_chats", "chat_error", "current_chat", "active_view", "vault_page", "vault_current_page", "selected_pdf", "show_sources", "settings_show_sources"):
+    for key in ("access_token", "username", "chats", "recent_chats", "chat_error", "current_chat", "active_view", "vault_page", "vault_current_page", "selected_pdf", "selected_user_doc", "show_sources", "settings_show_sources"):
         st.session_state.pop(key, None)
 
 
@@ -223,6 +225,11 @@ def open_vault():
     st.session_state.pop("selected_pdf", None)
 
 
+def open_personal_vault():
+    st.session_state.active_view = "personal_vault"
+    st.session_state.pop("selected_pdf", None)
+
+
 def open_pdf(filename):
     st.session_state.selected_pdf = filename
 
@@ -288,6 +295,11 @@ with st.sidebar:
         st.button(
             "Document vault", icon=":material/folder:", on_click=open_vault,
             type="primary" if st.session_state.get("active_view") == "vault" else "secondary",
+            width="stretch",
+        )
+        st.button(
+            "Personal vault", icon=":material/lock:", on_click=open_personal_vault,
+            type="primary" if st.session_state.get("active_view") == "personal_vault" else "secondary",
             width="stretch",
         )
     st.space("small")
@@ -384,6 +396,215 @@ if st.session_state.get("active_view") == "vault":
                             </div>
                         """)
                         st.button("Read PDF", key=f"read_{pdf}", icon=":material/menu_book:", on_click=open_pdf, args=(pdf,), width="stretch")
+    st.stop()
+
+if st.session_state.get("active_view") == "personal_vault":
+    if selected_user_doc := st.session_state.get("selected_user_doc"):
+        st.button("Back to personal vault", icon=":material/arrow_back:", on_click=lambda: st.session_state.pop("selected_user_doc", None))
+        st.subheader(selected_user_doc["display_name"], icon=":material/description:")
+        try:
+            content = read_user_vault_document(selected_user_doc["id"], st.session_state.access_token)
+        except requests.HTTPError as error:
+            if error.response is not None and error.response.status_code == 401:
+                session_expired()
+            st.error("Could not load this document. Return to personal vault and try again.")
+        except requests.RequestException:
+            st.error("The backend is unavailable. Please try again shortly.")
+        else:
+            if selected_user_doc["file_type"] == "pdf":
+                st.pdf(content, height=700, key="personal_pdf_reader")
+            else:
+                st.download_button(
+                    label=f"Download {selected_user_doc['display_name']}",
+                    data=content,
+                    file_name=selected_user_doc["display_name"],
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    icon=":material/download:",
+                    type="primary",
+                )
+                st.info("Document loaded! Click the button above to download the DOCX file.")
+        st.stop()
+
+    st.title("Personal vault", icon=":material/lock:")
+    st.caption("Upload, manage, and search your private legal documents.")
+
+    if upload_notice := st.session_state.pop("vault_upload_success", None):
+        st.success(upload_notice)
+
+    # 1. Fetch user documents from database
+    try:
+        user_docs = list_user_vault_documents(st.session_state.access_token)
+    except requests.HTTPError as error:
+        if error.response is not None and error.response.status_code == 401:
+            session_expired()
+        st.error("Could not load your vault documents. Please refresh shortly.")
+        user_docs = []
+    except requests.RequestException:
+        st.error("Backend is unavailable. Please refresh shortly.")
+        user_docs = []
+
+    MAX_FILES = 5
+    MAX_FILE_SIZE_MB = 20
+    MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+
+    # 2. Compact upload section
+    with st.expander("📤 Upload New Documents (PDF, DOCX)", expanded=(len(user_docs) == 0)):
+        st.caption("Supported formats: **PDF, DOCX** &nbsp;•&nbsp; Limit: **Up to 5 files** &nbsp;•&nbsp; **Max 20 MB** per file")
+        uploader_key = st.session_state.get("uploader_key", 0)
+        uploaded_files = st.file_uploader(
+            "Choose documents to upload",
+            type=["pdf", "docx"],
+            accept_multiple_files=True,
+            key=f"personal_vault_uploader_{uploader_key}",
+            label_visibility="collapsed",
+            help="Select up to 5 documents in PDF or DOCX format (maximum 20 MB each).",
+        )
+
+        if uploaded_files:
+            file_count = len(uploaded_files)
+            count_exceeded = file_count > MAX_FILES
+            oversized_files = [f for f in uploaded_files if f.size > MAX_FILE_SIZE_BYTES]
+
+            if count_exceeded:
+                st.error(
+                    f"⚠️ **Too many files:** You selected {file_count} files. "
+                    f"A maximum of {MAX_FILES} files can be uploaded at a time. Please remove the extra files."
+                )
+
+            if oversized_files:
+                for f in oversized_files:
+                    size_mb = f.size / (1024 * 1024)
+                    st.error(
+                        f"⚠️ **File too large:** `{f.name}` is **{size_mb:.1f} MB** "
+                        f"(exceeds the {MAX_FILE_SIZE_MB} MB limit)."
+                    )
+
+            if not count_exceeded and not oversized_files:
+                st.success(f"✓ {file_count} document{'s' if file_count > 1 else ''} validated and ready to upload.")
+
+                for f in uploaded_files:
+                    icon = "📄" if f.name.lower().endswith(".pdf") else "📝"
+                    size_kb = f.size / 1024
+                    size_label = f"{size_kb / 1024:.2f} MB" if size_kb >= 1024 else f"{size_kb:.1f} KB"
+                    st.html(
+                        f'<div style="display:flex; align-items:center; justify-content:space-between; '
+                        f'padding:8px 12px; margin:4px 0; background:#f4f9f6; border:1px solid #d8ebd0; border-radius:8px;">'
+                        f'<span>{icon} <strong>{escape(f.name)}</strong></span>'
+                        f'<span style="color:#527364; font-size:0.85rem;">{size_label}</span>'
+                        f'</div>'
+                    )
+
+                st.caption("ℹ️ **Please stay on this screen while indexing.** Leaving this tab will stop processing any remaining documents.")
+                st.space("small")
+                if st.button(
+                    f"Upload {file_count} document{'s' if file_count > 1 else ''} to Vault",
+                    key="btn_personal_vault_upload",
+                    type="primary",
+                    icon=":material/upload:",
+                ):
+                    with st.status(f"Processing {file_count} document(s)... Please do not leave this page.", expanded=True) as status_box:
+                        try:
+                            st.write("Uploading and embedding into your vector vault...")
+                            res = upload_personal_documents(uploaded_files, st.session_state.access_token)
+                            status_box.update(label="✓ Complete! Documents are ready.", state="complete", expanded=False)
+                            st.session_state["uploader_key"] = uploader_key + 1
+                            st.session_state["vault_upload_success"] = res.get("message", "Uploaded successfully!")
+                            st.rerun()
+                        except Exception as e:
+                            status_box.update(label="❌ Interrupted or Failed", state="error", expanded=False)
+                            st.error(f"Upload failed: {e}")
+
+    # 3. Documents Library (User Vault)
+    st.space("medium")
+    if not user_docs:
+        with st.container(border=True):
+            st.html("""
+                <div style="text-align:center; padding: 24px 12px;">
+                    <div style="font-size: 2.2rem; margin-bottom: 8px;">📂</div>
+                    <strong style="font-size: 1.1rem; color: #233831;">Your Vault is Empty</strong>
+                    <p style="color: #527364; font-size: 0.9rem; margin-top: 6px;">
+                        Upload private legal documents, contracts, or notices above to search them in your chats.
+                    </p>
+                </div>
+            """)
+    else:
+        ch1, ch2 = st.columns([0.72, 0.28], vertical_alignment="center")
+        with ch1:
+            st.subheader(f"Your Documents ({len(user_docs)})", icon=":material/folder_shared:")
+        with ch2:
+            with st.popover("Clear all vault data", icon=":material/delete_sweep:"):
+                st.caption("⚠️ **Are you sure?** Permanently delete all documents from database, disk, and vector vault.")
+                b_yes, b_no = st.columns(2)
+                with b_yes:
+                    if st.button("Yes, Delete All", type="primary", key="btn_confirm_clear_vault", width="stretch"):
+                        try:
+                            res = clear_user_vault(st.session_state.access_token)
+                            st.session_state["vault_upload_success"] = res.get("message", "Personal vault cleared successfully.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Failed to clear vault: {e}")
+                with b_no:
+                    if st.button("No, Cancel", key="btn_cancel_clear_vault", width="stretch"):
+                        st.rerun()
+
+        for doc in user_docs:
+            doc_id = doc["id"]
+            name = doc["display_name"]
+            ftype = doc["file_type"].lower()
+            icon = "📄" if ftype == "pdf" else "📝"
+            size_kb = (doc.get("file_size") or 0) / 1024
+            size_label = f"{size_kb / 1024:.2f} MB" if size_kb >= 1024 else f"{size_kb:.1f} KB"
+
+            raw_time = doc.get("uploaded_at")
+            if raw_time:
+                try:
+                    if isinstance(raw_time, str):
+                        dt = datetime.fromisoformat(raw_time.replace("Z", "+00:00"))
+                    else:
+                        dt = raw_time
+                    time_str = dt.astimezone(timezone(timedelta(hours=5, minutes=30))).strftime("%d %b %Y, %I:%M %p IST")
+                except Exception:
+                    time_str = str(raw_time)
+            else:
+                time_str = "Recently added"
+
+            with st.container(border=True, key=f"user_doc_card_{doc_id}"):
+                c1, c2, c3 = st.columns([0.62, 0.24, 0.14], vertical_alignment="center")
+                with c1:
+                    st.html(f"""
+                        <div style="display:flex; flex-direction:column; gap:4px;">
+                            <div style="font-size:1rem; font-weight:600; color:#182822; display:flex; align-items:center; gap:8px;">
+                                <span>{icon}</span> <span>{escape(name)}</span>
+                            </div>
+                            <div style="font-size:0.82rem; color:#527364; display:flex; gap:16px;">
+                                <span>📦 {size_label}</span>
+                                <span>🕒 {time_str}</span>
+                                <span style="background:#eaf4ed; color:#23613e; padding:1px 6px; border-radius:4px; font-weight:500;">✓ Indexed</span>
+                            </div>
+                        </div>
+                    """)
+                with c2:
+                    btn_label = "Read PDF" if ftype == "pdf" else "Download"
+                    btn_icon = ":material/menu_book:" if ftype == "pdf" else ":material/download:"
+                    if st.button(btn_label, key=f"view_doc_{doc_id}", icon=btn_icon, width="stretch"):
+                        st.session_state.selected_user_doc = doc
+                        st.rerun()
+                with c3:
+                    with st.popover("Delete", icon=":material/delete:"):
+                        st.caption(f"Delete **{escape(name)}**? This cannot be undone.")
+                        col_yes, col_no = st.columns(2)
+                        with col_yes:
+                            if st.button("Yes, Delete", key=f"confirm_del_{doc_id}", type="primary", width="stretch"):
+                                try:
+                                    delete_user_vault_document(doc_id, st.session_state.access_token)
+                                    st.session_state["vault_upload_success"] = f"✓ Deleted '{name}' from your vault."
+                                    st.rerun()
+                                except Exception as e:
+                                    st.error(f"Failed to delete: {e}")
+                        with col_no:
+                            if st.button("No, Cancel", key=f"cancel_del_{doc_id}", width="stretch"):
+                                st.rerun()
+
     st.stop()
 
 chat = st.session_state.chats[st.session_state.current_chat]

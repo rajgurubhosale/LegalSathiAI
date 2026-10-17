@@ -3,12 +3,6 @@ embedding:
   model_name: Octen/Octen-Embedding-0.6B
 
 
-#vectorstore:
-#  type: Chroma
-#  db_name: legal_saathi
-#  db_path: 'D:\LegalSaathi AI\vectorstore'
-#
-
 ingestion:
   pdf_folder: "D:/LegalSaathi AI/PDF_DATA"
   chunks_path: "D:/LegalSaathi AI/CHUNKS/1100_100/chunks.jsonl"
@@ -22,8 +16,8 @@ ingestion:
 
 vectorstore:
   type: Chroma
-  db_name: legal_saathi_oct_1100_100
-  db_path: 'D:/LegalSaathi AI/legal_saathi_oct_1100_100'
+  db_name: legal_saathi_octen_1200
+  db_path: 'D:\LegalSaathi AI\vectorstore_octen_1200'
 
 retrieval:
   top_n: 40
@@ -37,8 +31,8 @@ rerank:
   
 evaluation:
   threshold: 0.7
-  dataset_path: 'D:\LegalSaathi AI\src\evalutions\final_evalution_set.csv'
-  output_path: 'D:\LegalSaathi AI\src\evalutions\evaluation_results_modernbert\oct_qwen_1100_100.csv'   # overridden by the script below
+  dataset_path: 'D:/LegalSaathi AI/src/evalutions/final_evalution_set.csv'
+  output_path: 'D:/LegalSaathi AI/src/evalutions/evaluation_results_modernbert/oct_qwen_1200.csv'
   
   
   top_n: 40
@@ -51,3 +45,17 @@ evaluation:
     model_name: deepseek/deepseek-v4-flash
     base_url: https://api.meshapi.ai/v1
     api_key_env: MESH_DEEP_SEEK_FLASH
+
+
+# user data
+
+user_vault:
+  collection_name: "users_personal_vault"
+  db_path: "data/user_vault_vectorstore"
+  chunk_size: 1000
+  chunk_overlap: 100
+
+
+user_data:
+  user_data_path: "D:/LegalSaathi AI/user_data"
+  data_vault_path: "D:/LegalSaathi AI/user_data/data_vault"

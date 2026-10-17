@@ -20,6 +20,8 @@ services:
       - ./PDF_DATA:/app/PDF_DATA:ro
       - ./vectorstore_octen_1200:/app/vectorstore_octen_1200
       - model-cache:/root/.cache/huggingface
+      - ./data:/app/data
+      - ./user_data:/app/user_data
     restart: unless-stopped
 
   frontend:

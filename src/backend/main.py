@@ -23,6 +23,7 @@ async def lifespan(app: FastAPI):
 
         with PostgresSaver.from_conn_string(DATABASE_URL) as saver:
             saver.setup()
+            app.state.pipeline = pipeline
             app.state.rag_app = build_graph(pipeline, summarizer).compile(checkpointer=saver)
             logger.info("LegalSaathi API is ready.")
             yield

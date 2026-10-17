@@ -13,6 +13,7 @@ CHUNKS
 /logs/
 /.deepeval/
 /evalution_set/
+presentation
 /diagnostics/
 legal_saathi_gte_modernbert_800_100
 legal_saathi_gte_modernbert_1100_100
@@ -21,6 +22,7 @@ legal_saathi_oct_1100_100
 src/evalutions/evaluation_results_modernbert
 /PDF_DATA/
 /data/
+/user_data/
 /vectorstore/
 /vectorstore_*/
 .deepeval
@@ -46,8 +48,9 @@ src/evalutions/final_evalution_set.csv
 /tradeoffs.md
 /Untitled Diagram (1).drawio
 /new_table_cropped.pdf
-
+.pytest_temp
 # Local documentation artifacts
 /docs/project_data.md
 /docs/write_timing_comparison.png
 /docs/image.png
+.ruff_cache

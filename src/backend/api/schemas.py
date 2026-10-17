@@ -46,3 +46,8 @@ class ChatResponse(BaseModel):
     answer: str
     chat_history: list[ChatMessage]
     sources: list[Source]
+
+
+class UploadResponse(BaseModel):
+    message: str
+    uploaded_files: list[str]

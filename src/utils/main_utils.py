@@ -17,7 +17,6 @@ def read_config_file(path=None):
         if os.getenv("LEGALSAATHI_VECTORSTORE_PATH"):
             config["vectorstore"]["db_path"] = os.environ["LEGALSAATHI_VECTORSTORE_PATH"]
 
-        logger.info(f"YAML loaded from {yaml_file_path}")
         return config
 
     except Exception as e:

@@ -19,8 +19,7 @@ async def lifespan(app: FastAPI):
 
         pipeline.warmup()
 
-        # small, cheap model just for summaries
-        summarizer = ChatGroq(model="llama-3.1-8b-instant", temperature=0, max_tokens=200)
+        summarizer = ChatGroq(model="openai/gpt-oss-20b", temperature=0, max_tokens=300, max_retries=3)
 
         with PostgresSaver.from_conn_string(DATABASE_URL) as saver:
             saver.setup()

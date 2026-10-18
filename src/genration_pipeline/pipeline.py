@@ -1,8 +1,6 @@
 from src.rag_retrieval.retrival import *
 from src.genration_pipeline.model import *
-from src.genration_pipeline.new_prompts import *
 from src.rag_retrieval.retrival import *
-from langchain_core.output_parsers import StrOutputParser
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from itertools import zip_longest
@@ -27,7 +25,6 @@ class LegalSaathiPipeline:
         self.reranker = Reranker(rerank_k=self.rerank_k)
         self.model = get_model(api_key=groq_api_key)
 
-        self.chain = system_msg | self.model | StrOutputParser()
         self.decomposition_model = self.model.with_structured_output(
             SubQueriesSchema,
             method="json_schema",

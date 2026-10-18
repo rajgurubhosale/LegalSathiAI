@@ -16,5 +16,5 @@ def get_model(model: str = "openai/gpt-oss-120b", temperature: float = 0, api_ke
         api_key=api_key,
         temperature=temperature,
         timeout=60,
-        max_retries=1,
+        max_retries=5,
     )

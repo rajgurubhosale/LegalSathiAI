@@ -187,9 +187,19 @@
 }
 
 .st-key-chat_history button {
-    justify-content: flex-start;
-    text-align: left;
+    justify-content: flex-start !important;
+    text-align: left !important;
     border-color: transparent;
+    padding-left: 12px;
+}
+
+.st-key-chat_history button div,
+.st-key-chat_history button p {
+    text-align: left !important;
+    justify-content: flex-start !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 .st-key-chat_history button:hover {

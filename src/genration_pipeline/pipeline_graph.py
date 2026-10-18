@@ -1,17 +1,23 @@
 from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
-
 from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware import SummarizationMiddleware
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import tool
 from langgraph.types import Command
-
+from langchain_core.tools import InjectedToolCallId
+from langchain_core.messages import ToolMessage
 from src.genration_pipeline.new_prompts import SYSTEM_PROMPT as AGENT_SYSTEM_PROMPT
 
-SUMMARIZE_AFTER = 8   
-KEEP_RECENT = 4        
+SUMMARIZE_AFTER = 20   
+KEEP_RECENT = 8        
+
+SUMMARY_PROMPT = """You are a conversation summarizer. Summarize the key points, user questions, and legal context discussed in the conversation so far in concise, plain text:
+<messages>
+{messages}
+</messages>
+Write only a plain, clear summary. Strictly do NOT use section headers like 'SESSION INTENT', 'SUMMARY', or 'ARTIFACTS'."""        
 
 # ---------- State ----------
 def collect_sources(old, new):
@@ -26,13 +32,13 @@ class LegalState(AgentState):
 
 def create_search_tool(pipeline):
     @tool
-    def search_legal_documents(query: str, config: RunnableConfig):
-        """
-        Search Indian statutory acts (BNS, BSA, BNSS, Labour Codes, RTI, RERA)
+    def search_legal_documents(query: str, config: RunnableConfig,tool_call_id: Annotated[str, InjectedToolCallId]):
+        """Search Indian statutory acts (BNS, BSA, BNSS, Labour Codes, RTI, RERA)
         and the user's uploaded private documents (contracts, agreements, notices).
-        Use for questions about laws, legal rights, or the user's files.
-        Pass one focused, standalone query; call again for a separate legal issue.
-        Do NOT use for greetings, thanks, or questions about this chat's history."""
+        Use for ANY question about laws, rights, punishments, procedures, or the user's files,
+        including follow-up legal questions (rewrite them as a standalone query).
+        Pass one focused query; call again for a separate legal issue.
+        Do NOT use for greetings, thanks, or questions about earlier messages in this chat."""
 
         # 1. Safely extract user_id injected from backend config
         user_id = config.get("configurable", {}).get("user_id")
@@ -46,11 +52,13 @@ def create_search_tool(pipeline):
             docs = main_f.result() + (vault_f.result() if vault_f else [])
 
         if not docs:
-            return Command(
-                update={"sources": []},
-                content="No relevant legal or vault documents found.",
-            )
-
+            return Command(update={
+                "sources": [],
+                "messages": [ToolMessage(
+                    content="No relevant legal or vault documents found.",
+                    tool_call_id=tool_call_id,
+                )],
+            })
         ranked = pipeline.reranker.rerank(docs=docs, query=query)
         top = [doc for _, doc in ranked[:pipeline.max_chunks]]
 
@@ -65,10 +73,10 @@ def create_search_tool(pipeline):
             sources.append({"act_name": name, "pages": pages})
 
         context = "\n\n".join(chunks)
-        return Command(
-            update={"sources": sources},
-            content=context,
-        )
+        return Command(update={
+            "sources": sources,
+            "messages": [ToolMessage(content=context, tool_call_id=tool_call_id)],
+        })
 
     return search_legal_documents
 
@@ -83,8 +91,9 @@ def build_agent(pipeline, summarizer, checkpointer=None):
         middleware=[
             SummarizationMiddleware(
                 model=summarizer,
-                trigger=("messages", 12),
-                keep=("messages", 6),
+                trigger=("messages", SUMMARIZE_AFTER),
+                keep=("messages", KEEP_RECENT),
+                summary_prompt=SUMMARY_PROMPT,
             )
         ],
         checkpointer=checkpointer,

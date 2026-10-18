@@ -12,6 +12,7 @@ from src.backend.api.schemas import ChatRequest,UploadResponse
 from uuid import UUID, uuid4
 from src.backend.services.chat import save_chat_if_needed, list_chats, owns_chat,make_config,stream_answer
 from src.backend.services.vault import UserVault
+from src.logger import logger
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, BackgroundTasks, status
 

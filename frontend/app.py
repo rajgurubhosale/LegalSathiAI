@@ -1,9 +1,12 @@
+import io
 import json
 import re
 import sys
 from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
+
+import docx
 
 import streamlit as st
 import requests
@@ -401,28 +404,44 @@ if st.session_state.get("active_view") == "vault":
 if st.session_state.get("active_view") == "personal_vault":
     if selected_user_doc := st.session_state.get("selected_user_doc"):
         st.button("Back to personal vault", icon=":material/arrow_back:", on_click=lambda: st.session_state.pop("selected_user_doc", None))
-        st.subheader(selected_user_doc["display_name"], icon=":material/description:")
-        try:
-            content = read_user_vault_document(selected_user_doc["id"], st.session_state.access_token)
-        except requests.HTTPError as error:
-            if error.response is not None and error.response.status_code == 401:
-                session_expired()
+        
+        top_c1, top_c2 = st.columns([0.72, 0.28], vertical_alignment="center")
+        with top_c1:
+            st.subheader(selected_user_doc["display_name"], icon=":material/description:")
+        with top_c2:
+            try:
+                content = read_user_vault_document(selected_user_doc["id"], st.session_state.access_token)
+                mime_type = "application/pdf" if selected_user_doc["file_type"] == "pdf" else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                st.download_button(
+                    label=f"Download original",
+                    data=content,
+                    file_name=selected_user_doc["display_name"],
+                    mime=mime_type,
+                    icon=":material/download:",
+                    width="stretch",
+                )
+            except Exception:
+                content = None
+
+        if content is None:
             st.error("Could not load this document. Return to personal vault and try again.")
-        except requests.RequestException:
-            st.error("The backend is unavailable. Please try again shortly.")
         else:
             if selected_user_doc["file_type"] == "pdf":
                 st.pdf(content, height=700, key="personal_pdf_reader")
             else:
-                st.download_button(
-                    label=f"Download {selected_user_doc['display_name']}",
-                    data=content,
-                    file_name=selected_user_doc["display_name"],
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    icon=":material/download:",
-                    type="primary",
-                )
-                st.info("Document loaded! Click the button above to download the DOCX file.")
+                try:
+                    doc_io = io.BytesIO(content)
+                    doc_parsed = docx.Document(doc_io)
+                    paragraphs = [p.text.strip() for p in doc_parsed.paragraphs if p.text.strip()]
+                    if paragraphs:
+                        st.caption(f"Reading {len(paragraphs)} paragraphs from your uploaded document.")
+                        with st.container(border=True):
+                            for para in paragraphs:
+                                st.write(para)
+                    else:
+                        st.info("This document does not contain readable text paragraphs.")
+                except Exception as e:
+                    st.warning(f"Could not format document text: {e}")
         st.stop()
 
     st.title("Personal vault", icon=":material/lock:")
@@ -584,9 +603,7 @@ if st.session_state.get("active_view") == "personal_vault":
                         </div>
                     """)
                 with c2:
-                    btn_label = "Read PDF" if ftype == "pdf" else "Download"
-                    btn_icon = ":material/menu_book:" if ftype == "pdf" else ":material/download:"
-                    if st.button(btn_label, key=f"view_doc_{doc_id}", icon=btn_icon, width="stretch"):
+                    if st.button("Read Document", key=f"view_doc_{doc_id}", icon=":material/menu_book:", width="stretch"):
                         st.session_state.selected_user_doc = doc
                         st.rerun()
                 with c3:
@@ -611,15 +628,14 @@ chat = st.session_state.chats[st.session_state.current_chat]
 question = None
 
 if not chat["messages"]:
-    st.title("Ask me anything about Indian law", icon="⚖️", text_alignment="center")
-    with st.container(horizontal_alignment="center"):
-        st.write("Explore the Indian Acts in your document vault.")
+    st.title("Ask me anything about Indian law", icon="⚖️")
+    st.write("Explore the Indian Acts in your document vault.")
     examples = [
         "What is criminal intimidation under BNS?",
         "How long does an RTI reply take?",
         "What remedies does RERA provide for delayed possession?",
     ]
-    with st.container(horizontal=True, horizontal_alignment="center"):
+    with st.container(horizontal=True):
         for example in examples:
             if st.button(example):
                 question = example

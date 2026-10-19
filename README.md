@@ -97,15 +97,29 @@ Benchmarked using **DeepEval** (`deepseek-v4-flash` judge, `gpt-oss-120b` genera
 | Category | Metric | Score | Description |
 |---|---|:---:|---|
 | **Retrieval** | **Hit Rate @ 5** | **0.977** | 43 of 44 queries retrieve exact statutory evidence in top 5 chunks |
-| **Retrieval** | **Recall @ 5** | **0.867** | High coverage of required statutory provisions |
 | **Retrieval** | **MRR @ 5** | **0.841** | Key authoritative clause positioned at rank 1 or 2 on average |
-| **Retrieval** | **nDCG @ 5** | **0.802** | High ranking quality accounting for graded statutory relevance |
-| **Retrieval** | **Precision @ 5** | **0.328** | Proportion of selected chunks directly matching ground-truth clauses |
+| **Retrieval** | **Recall @ 5** | **0.867** | High coverage of required statutory provisions |
+| **LLM Judge** | **Faithfulness** | **0.948** | Strict adherence to text with zero hallucinations |
 | **LLM Judge** | **Answer Relevancy** | **0.940** | Comprehensive, accurate, and intent-aligned legal answer |
 | **LLM Judge** | **Contextual Precision** | **0.826** | Clean, noise-free statutory context in prompt |
 | **LLM Judge** | **Contextual Recall** | **0.883** | All required legal nuances and provisions captured in context |
 | **LLM Judge** | **Contextual Relevancy** | **0.385** | Ratio of retrieved statutory sentences directly relevant to query |
-| **LLM Judge** | **Faithfulness** | **0.948** | Strict adherence to text with zero hallucinations |
+
+### ⏱️ Retrieval Pipeline Stage Profiling
+
+Benchmarked over 45 statutory queries on **NVIDIA RTX 4050 Laptop GPU (6 GB VRAM) + Intel Core 5 210H + 24 GB RAM**:
+
+| Stage | Hardware | Avg. Latency (ms) | Share (%) |
+|---|:---:|:---:|:---:|
+| **1. Dense Search** (`Octen-0.6B`) | GPU (RTX 4050) | 315.1 ms | 30.2% |
+| **2. BM25 Lexical Search** | CPU / RAM | 57.1 ms | 5.5% |
+| **3. RRF Fusion & Deduplication** | CPU | 0.1 ms | < 0.1% |
+| **4. Qwen3 Cross-Encoder Reranker** | GPU (RTX 4050) | 671.7 ms | 64.3% |
+| **Total Retrieval Pipeline** | **Local Hardware** | **1,044.0 ms** | **100.0%** |
+
+> 🔍 **Engineering Trade-off & Optimization:**
+> * **The Trade-off:** The Qwen3 reranker adds **672 ms** (64% of local retrieval), increasing latency from 372 ms to 1,044 ms, but boosts Hit Rate @ 5 by **+45.4%** (from **52.3% to 97.7%**) an essential trade-off where citing the wrong legal section is unacceptable.
+> * **Roadmap:** Converting the reranker to **ONNX Runtime with  quantization** is our top priority to compress model size and cut latency under 200 ms.
 
 ---
 

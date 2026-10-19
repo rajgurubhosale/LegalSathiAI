@@ -260,23 +260,23 @@ def show_settings():
         key="settings_show_sources", on_change=save_source_preference,
     )
     if st.button("Done", type="primary", icon=":material/check:"):
-            st.rerun()
+        st.rerun()
 
 
-    def show_message(message):
-        avatar = ":material/person:" if message["role"] == "user" else ":material/balance:"
-        with st.chat_message(message["role"], avatar=avatar):
-            st.markdown(message["content"])
-            if message.get("sources") and st.session_state.get("show_sources", True):
-                with st.expander("View sources", icon=":material/library_books:"):
-                    for source in message["sources"]:
-                        name = source.get("act_name") or source.get("pdf") or "Document"
-                        pages = source.get("pages", [])
-                        if pages:
-                            pages_str = ", ".join(map(str, pages))
-                            st.write(f"📄 {name} — PDF pages: {pages_str}")
-                        else:
-                            st.write(f"📄 {name}")
+def show_message(message):
+    avatar = ":material/person:" if message["role"] == "user" else ":material/balance:"
+    with st.chat_message(message["role"], avatar=avatar):
+        st.markdown(message["content"])
+        if message.get("sources") and st.session_state.get("show_sources", True):
+            with st.expander("View sources", icon=":material/library_books:"):
+                for source in message["sources"]:
+                    name = source.get("act_name") or source.get("pdf") or "Document"
+                    pages = source.get("pages", [])
+                    if pages:
+                        pages_str = ", ".join(map(str, pages))
+                        st.write(f"📄 {name} — PDF pages: {pages_str}")
+                    else:
+                        st.write(f"📄 {name}")
 
 
 if "chats" not in st.session_state:

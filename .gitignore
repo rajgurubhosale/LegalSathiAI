@@ -21,6 +21,10 @@ legal_saathi_oct_1100_100
 # Local data and vector stores
 src/evalutions/evaluation_results_modernbert
 /PDF_DATA/
+latency.md
+demo_rent_agreement.pdf
+demo_employment_agreement.pdf
+src/scripts
 /data/
 /user_data/
 /vectorstore/

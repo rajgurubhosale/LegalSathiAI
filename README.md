@@ -153,3 +153,11 @@ uv run streamlit run frontend/app.py --server.port 8501
 * 📖 **Backend API Docs**: [http://localhost:8000/docs](http://localhost:8000/docs)
 
 ---
+
+## 🔮 Future Scope & Roadmap
+
+- [ ] **More Legal Coverage**: Add State laws, corporate acts (Companies Act, IBC), and Supreme Court / High Court case laws.
+- [ ] **ONNX & Model Optimization**: Convert embedding and reranker models to ONNX / INT8 quantization to cut Docker image size and boost CPU inference.
+- [ ] **Legal Drafting & Redlining**: Auto-draft agreements and notices, with automated contract risk analysis and clause comparison.
+- [ ] **Scanned Documents & OCR**: Add vision models to process stamped papers, handwritten FIRs, and physical court documents.
+- [ ] **Legal Citation Graph**: Build a reference graph linking related legal sections and judicial precedents.

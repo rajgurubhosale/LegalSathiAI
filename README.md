@@ -90,7 +90,7 @@ Benchmarked using **DeepEval** (`deepseek-v4-flash` judge, `gpt-oss-120b` genera
 
 | Category | Metric | Score | Description |
 |---|---|:---:|---|
-| **Retrieval** | **Hit Rate @ 5** | **0.977** | 43 of 44 queries retrieve exact statutory evidence in top 5 chunks |
+| **Retrieval** | **Hit Rate @ 5** | **0.977** | 44 of 45 queries retrieve exact statutory evidence in top 5 chunks |
 | **Retrieval** | **MRR @ 5** | **0.841** | Key authoritative clause positioned at rank 1 or 2 on average |
 | **Retrieval** | **Recall @ 5** | **0.867** | High coverage of required statutory provisions |
 | **LLM Judge** | **Faithfulness** | **0.948** | Strict adherence to text with zero hallucinations |

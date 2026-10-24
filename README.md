@@ -21,55 +21,49 @@
 
 It uses a stateful **LangGraph Agent** paired with **Dual-Source Hybrid Retrieval** and **Cross-Encoder Reranking** to deliver accurate, citation-backed answers with zero hallucinations.
 
-### Key Capabilities
-1. **Agentic Tool Calling**: Uses a LangGraph agent that decides when to search the law, handles multi-turn reasoning, and knows when simple conversation doesn't need retrieval.
-2. **Dual-Retrieval (Statutes + Personal Vault)**: In a single prompt, you can compare 22 central Indian statutes with your own uploaded contracts, notices, or agreements (PDF/DOCX).
-3. **Hybrid Search + Re-ranking**: Blends keyword matching (`BM25`) with deep semantic embeddings (`Octen-0.6B`) via Reciprocal Rank Fusion (`RRF`), followed by precision re-ranking with `Qwen3-Reranker-0.6B`.
-4. **Smart Conversational Memory**: Remembers your chat across sessions using PostgreSQL checkpointing, while automatic summarization middleware keeps long conversations lightning-fast and token-efficient.
-5. **Real-time SSE Streaming**: Answers stream in token-by-token alongside exact statutory section and PDF page citations.
+## ✨ Features
+
+1. **Autonomous LangGraph Agent & Dynamic Tool Calling**: The agent autonomously reasons over incoming user queries—answering chit-chat and greetings directly with **zero retrieval** (saving latency and tokens), while invoking the `search_legal_documents` tool for substantive legal queries.
+2. **Dual-Source Retrieval (Public Statutes + Private Vault)**: In a single prompt, cross-examine **22 core Indian central statutes** alongside user-uploaded contracts, agreements, or legal notices (`.pdf` / `.docx`) isolated by user ID.
+3. **High-Precision Hybrid Search & Cross-Encoder Reranking**: Blends dense semantic retrieval (`Octen-0.6B`) with sparse lexical matching (`BM25`) via Reciprocal Rank Fusion (`RRF`), followed by `Qwen3-Reranker-0.6B` cross-encoder reranking to achieve a **0.977 Hit Rate @ 5**.
+4. **Stateful Multi-Session Memory & Context Compaction**: Persists multi-turn conversations across sessions via PostgreSQL checkpointing (`PostgresSaver`), utilizing LangChain `SummarizationMiddleware` to compress history after 20 messages while preserving recent context.
+5. **Real-Time Token Streaming with Exact Page Citations**: Streams answers in real-time over Server-Sent Events (SSE) alongside verified statutory section numbers and PDF page-level citations for transparent legal auditing.
 
 ---
 
 ## 🏗️ System Architecture
 
+### 1. Ingestion Pipeline
 ```mermaid
-flowchart TD
-    subgraph OFF["1. Statutory ingestion (offline)"]
-        A1["22 Indian Acts (PDF)"] --> A2["Docling parsing + chunking"]
-        A2 --> A3["Octen-0.6B embeddings"]
-        A3 --> A4[("Statutory ChromaDB")]
-    end
-
-    subgraph UP["2. Personal vault ingestion (online)"]
-        U1["User upload (PDF / DOCX)"] --> U2["PyMuPDF / python-docx + chunking"]
-        U2 --> U3["Octen-0.6B embeddings"]
-        U3 --> U4[("Vault ChromaDB<br/>filtered by user_id")]
-    end
-
-    subgraph RT["3. Agentic RAG (runtime)"]
-        Q(["User query<br/>Streamlit + FastAPI"]) --> AG["LangGraph agent<br/>Groq LLM + tool calling"]
-        AG <-->|"long chats"| SM["Summarization middleware"]
-        AG -->|"legal / document question"| T["search_legal_documents"]
-        AG -->|"greeting / chat history"| OUT
-
-        T --> W1["Statutory hybrid search<br/>dense + BM25, RRF"]
-        T -->|"user has documents"| W2["Vault search<br/>user_id from JWT"]
-        W1 --> R["Qwen3-Reranker-0.6B<br/>one pass over combined pool"]
-        W2 --> R
-        R -->|"top chunks + sources"| AG
-        AG --> OUT(["Streamed answer + citations"])
-    end
-
-    A4 -.-> W1
-    U4 -.-> W2
+flowchart LR
+    A[22 Indian Acts<br/>PDF] --> B[Docling<br/>parse + chunk] --> C[Octen<br/>embeddings] --> D[(Statutes<br/>ChromaDB)]
+    E[User upload<br/>PDF / DOCX] --> F[Parse + chunk] --> G[Octen<br/>embeddings] --> H[(User vault<br/>ChromaDB)]
 ```
 
+### 2. Query Runtime (Stateful LangGraph Agent)
+```mermaid
+flowchart TD
+    U([User query]) --> API[FastAPI<br/>/chat/stream]
+    API --> AG{LangGraph agent<br/>+ Postgres memory}
+    AG -->|chit-chat| R[Direct reply]
+    AG -->|legal query| T[search tool]
+    T --> S1[Statutes<br/>dense + BM25 + RRF]
+    T --> S2[User vault<br/>filtered by user_id]
+    S1 --> RR[Qwen3 reranker<br/>top 4 + page citations]
+    S2 --> RR
+    RR --> AG
+    AG --> ANS[Grounded answer]
+    R --> OUT([SSE stream to UI])
+    ANS --> OUT
+```
+
+
 ### ⚡ End-to-End Query Lifecycle
-1. **Query & Agent State**: User query arrives from Streamlit → FastAPI loads conversation thread via `PostgresSaver` → Summarizer compresses history if > 12 messages.
-2. **Parallel Tool Retrieval**: Agent invokes `search_legal_documents` with 2 concurrent workers:
-   - **Worker 1**: Executes Statutory Hybrid Search (ChromaDB dense vectors + in-memory BM25 lexical search fused via RRF).
-   - **Worker 2**: Conditionally executes Personal Vault Search in ChromaDB (only if user documents exist).
-3. **Candidate Merging & Reranking**: Documents from both streams are merged (`docs = main_docs + vault_docs`) and fed into `Qwen3-Reranker-0.6B` to filter the Top 4 most authoritative passages.
+1. **Agent State & Memory**: User query arrives via Streamlit $\rightarrow$ FastAPI loads conversation thread state using `PostgresSaver`. If the thread exceeds 20 messages, `SummarizationMiddleware` compresses older context.
+2. **Autonomous Tool Routing**:
+   - **Chit-chat / Greeting**: The agent responds directly without querying vector databases.
+   - **Legal Question**: The agent invokes `search_legal_documents` with 2 concurrent workers (Statutory Hybrid Search + Personal Vault Search).
+3. **Candidate Merging & Cross-Encoder Reranking**: Retrieved chunks from both sources are pooled and scored using `Qwen3-Reranker-0.6B` to isolate the Top 4 most authoritative passages.
 4. **Grounded Generation**: Groq LLM synthesizes the verified answer strictly using the top passages and streams tokens + PDF page citations over SSE.
 
 ## 📚 Document Coverage & Knowledge Base
@@ -92,7 +86,7 @@ LegalSaathi indexes **22 core Indian central statutes**:
 
 ## 📊 Production Evaluation Benchmarks
 
-Benchmarked using **DeepEval** (`deepseek-v4-flash` judge, `gpt-oss-120b` generator) on 44 curated statutory test cases:
+Benchmarked using **DeepEval** (`deepseek-v4-flash` judge, `gpt-oss-120b` generator) on 45 curated statutory test cases:
 
 | Category | Metric | Score | Description |
 |---|---|:---:|---|
@@ -125,42 +119,20 @@ Benchmarked over 45 statutory queries on **NVIDIA RTX 4050 Laptop GPU (6 GB VRAM
 
 ## 🚀 Quickstart Guide
 
-### 1. Clone & Install
-```powershell
-# Clone the repository
+### Option A: Run with Docker Compose (Recommended)
+
+Run both the FastAPI backend and Streamlit frontend in containerized environments:
+
+```bash
+# 1. Clone the repository
 git clone https://github.com/rajgurubhosale/LegalSathiAI.git
 cd LegalSathiAI
 
-# Install dependencies using uv
-uv sync
-```
+# 2. Configure your environment variables (.env)
+# Create a .env file with your API keys and database credentials (see template below)
 
-### 2. Configure Environment
-Create a `.env` file in the project root:
-```dotenv
-GROQ_API_KEY=your_groq_api_key
-DATABASE_URL=postgresql://postgres:password@localhost:5432/legalsaathi
-SECRET_KEY=your_secret_key_hex
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-```
-
-### 3. Start PostgreSQL
-Ensure your PostgreSQL instance is running:
-```powershell
-docker-compose up -d db
-```
-
-### 4. Run the Application
-
-**Start the FastAPI Backend:**
-```powershell
-uv run python -m uvicorn src.backend.main:app --port 8000 --reload
-```
-
-**Start the Streamlit Web UI:**
-```powershell
-uv run streamlit run frontend/app.py --server.port 8501
+# 3. Build and launch all services
+docker compose up --build
 ```
 
 * 🌐 **Frontend UI**: [http://localhost:8501](http://localhost:8501)
@@ -168,10 +140,40 @@ uv run streamlit run frontend/app.py --server.port 8501
 
 ---
 
+### Option B: Local Development Setup (`uv`)
+
+#### 1. Install Dependencies
+```bash
+# Install dependencies using uv
+uv sync
+```
+
+#### 2. Configure Environment (`.env`)
+Create a `.env` file in the project root:
+```dotenv
+GROQ_API_KEY=your_groq_api_key
+DATABASE_URL=postgresql://postgres:password@localhost:5432/legalsathi
+SECRET_KEY=your_secret_key_hex_at_least_32_characters
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
+
+#### 3. Run Backend & Frontend
+
+**Terminal 1 — Start FastAPI Backend:**
+```bash
+uv run python -m uvicorn src.backend.main:app --port 8000 --reload
+```
+
+**Terminal 2 — Start Streamlit Frontend:**
+```bash
+uv run streamlit run frontend/app.py --server.port 8501
+```
+---
+
 ## 🔮 Future Scope & Roadmap
 
 - [ ] **More Legal Coverage**: Add State laws, corporate acts (Companies Act, IBC), and Supreme Court / High Court case laws.
 - [ ] **ONNX & Model Optimization**: Convert embedding and reranker models to ONNX / INT8 quantization to cut Docker image size and boost CPU inference.
 - [ ] **Legal Drafting & Redlining**: Auto-draft agreements and notices, with automated contract risk analysis and clause comparison.
-- [ ] **Scanned Documents & OCR**: Add vision models to process stamped papers, handwritten FIRs, and physical court documents.
-- [ ] **Legal Citation Graph**: Build a reference graph linking related legal sections and judicial precedents.
+- [ ] **Scanned Documents & OCR**: Integrate multimodal vision models to extract text from mobile camera-clicked PDFs, skewed/shadowed phone scans, physical stamped agreements, and handwritten police complaints (FIRs).

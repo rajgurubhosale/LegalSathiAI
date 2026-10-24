@@ -1,6 +1,6 @@
 from pathlib import Path
 from fastapi.responses import FileResponse, StreamingResponse
-from src.backend.api.dependencies import get_current_user, get_pipeline,get_db
+from src.backend.api.dependencies import get_current_user, CurrentUser,get_db,DB
 from src.backend.api.sse import sse
 from fastapi import UploadFile, File
 from uuid import uuid4
@@ -38,7 +38,7 @@ def documents():
 
 
 @protected.get("/chats")
-def recent_chats(user=Depends(get_current_user), db=Depends(get_db)):
+def recent_chats(user=Depends(get_current_user), db=DB):
     return list_chats(db, user["id"])
 
 
@@ -62,7 +62,7 @@ def read_document(filename: str):
 
 
 @protected.post("/chat/stream")
-def chat_stream(request: ChatRequest, http: Request,user=Depends(get_current_user), db=Depends(get_db)):
+def chat_stream(request: ChatRequest, http: Request,user=CurrentUser, db=DB):
 
     if not request.question.strip():
         raise HTTPException(status_code=422, detail="Question cannot be blank")
@@ -91,7 +91,7 @@ def chat_stream(request: ChatRequest, http: Request,user=Depends(get_current_use
     )
 
 @protected.get("/chats/{chat_id}/messages")
-def chat_messages(chat_id: UUID, http: Request,user=Depends(get_current_user), db=Depends(get_db)):
+def chat_messages(chat_id: UUID, http: Request,user=CurrentUser, db=DB):
 
     if not owns_chat(db, chat_id, user["id"]):
         raise HTTPException(status_code=404, detail="Chat not found")
@@ -114,7 +114,7 @@ def chat_messages(chat_id: UUID, http: Request,user=Depends(get_current_user), d
 VAULT_BASE_DIR = Path("user_data/data_vault")
 
 @protected.post("/upload_documents/",response_model=UploadResponse)
-def uplod_documents(files: list[UploadFile] = File(...), user=Depends(get_current_user), db=Depends(get_db)):
+def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB):
     MAX_FILES = 5   
     MAX_SIZE = 20 * 1024 * 1024  # 20 MB
     MAGIC = {".pdf": b"%PDF-", ".docx": b"PK"}
@@ -190,13 +190,13 @@ def uplod_documents(files: list[UploadFile] = File(...), user=Depends(get_curren
 
 
 @protected.get("/user/documents")
-def get_user_vault_documents(user=Depends(get_current_user), db=Depends(get_db)):
+def get_user_vault_documents(user=CurrentUser, db=DB):
     """Returns metadata for all documents in the user's personal vault."""
     return list_user_documents(db, user["id"])
 
 
 @protected.get("/user/documents/{doc_id}")
-def stream_user_vault_document(doc_id: str, user=Depends(get_current_user), db=Depends(get_db)):
+def stream_user_vault_document(doc_id: str, user=CurrentUser, db=DB):
     """Streams a single document on-demand to protect server and client RAM."""
     doc = get_user_document(db, user["id"], doc_id)
     if not doc:
@@ -255,8 +255,8 @@ def _bg_clear_vault(user_id: int, paths: list[str], folder: Path):
 def delete_vault_document(
     doc_id: str,
     background_tasks: BackgroundTasks,
-    user=Depends(get_current_user),
-    db=Depends(get_db),
+    user=CurrentUser,
+    db=DB,
 ):
     """Deletes metadata from PostgreSQL immediately (<2ms), then cleans Chroma & disk in background."""
     doc = delete_user_document(db, user["id"], doc_id)
@@ -279,8 +279,8 @@ def delete_vault_document(
 @protected.delete("/user/vault")
 def clear_personal_vault(
     background_tasks: BackgroundTasks,
-    user=Depends(get_current_user),
-    db=Depends(get_db),
+    user=CurrentUser,
+    db=DB,
 ):
     """Clears all records from PostgreSQL immediately (<5ms), then cleans Chroma & disk in background."""
     docs = clear_user_vault(db, user["id"])

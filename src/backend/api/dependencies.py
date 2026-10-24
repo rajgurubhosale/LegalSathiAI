@@ -45,6 +45,7 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],db: Annotated
 
 
 CurrentUser = Annotated[dict, Depends(get_current_user)]
+DB = Annotated[Connection, Depends(get_db)]
 
 def require_role(*roles: str):
     def checker(user: CurrentUser) -> dict:
@@ -52,7 +53,6 @@ def require_role(*roles: str):
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
         return user
     return checker
-
 
 
 

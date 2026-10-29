@@ -1,20 +1,26 @@
+import asyncio
 from pathlib import Path
-from fastapi.responses import FileResponse, StreamingResponse
-from src.backend.api.dependencies import get_current_user, CurrentUser,get_db,DB
-from src.backend.api.sse import sse
-from fastapi import UploadFile, File
-from uuid import uuid4
-from src.backend.db.users import (
-    savefiles_metadata_in_db, list_user_documents, get_user_document,
-    delete_user_document, clear_user_vault,
-)
-from src.backend.api.schemas import ChatRequest,UploadResponse
 from uuid import UUID, uuid4
-from src.backend.services.chat import save_chat_if_needed, list_chats, owns_chat,make_config,stream_answer
+
+from fastapi import (
+    APIRouter, BackgroundTasks, Depends, File, HTTPException, Request,
+    UploadFile, status
+)
+from fastapi.responses import FileResponse, StreamingResponse
+
+from src.backend.api.dependencies import CurrentUser, DB, get_current_user
+from src.backend.api.schemas import ChatRequest, UploadResponse
+from src.backend.api.sse import sse
+from src.backend.db.users import (
+    clear_user_vault, delete_user_document, get_user_document,
+    list_user_documents, savefiles_metadata_in_db,
+)
+from src.backend.services.chat import (
+    list_chats, make_config, owns_chat,
+    save_chat_if_needed, stream_answer,
+)
 from src.backend.services.vault import UserVault
 from src.logger import logger
-
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File, BackgroundTasks, status
 
 PDF_DIR = Path(__file__).resolve().parents[4] / "PDF_DATA"
 
@@ -23,33 +29,32 @@ protected = APIRouter(dependencies=[Depends(get_current_user)])   # needs a toke
 
 # public
 @router.get("/")
-def welcome():
+async def welcome():
     return {"msg": "welcome to the legalsathi api"}
 
 
 @router.get("/health")
-def health():
+async def health():
     return {"status": "ready"}
 
 
 @protected.get("/documents", response_model=list[str])
-def documents():
+async def documents():
     return sorted(pdf.name for pdf in PDF_DIR.glob("*.pdf"))
 
 
 @protected.get("/chats")
-def recent_chats(user=Depends(get_current_user), db=DB):
-    return list_chats(db, user["id"])
+async def recent_chats(user=Depends(get_current_user), db=DB):
+    return await asyncio.to_thread(list_chats, db, user["id"])
 
 
 @protected.post("/chats/draft")
-def new_chat_draft():
+async def new_chat_draft():
     return {"chat_id": str(uuid4())}
 
 
-
 @protected.get("/documents/{filename}")
-def read_document(filename: str):
+async def read_document(filename: str):
     document = (PDF_DIR / filename).resolve()
     if (
         "/" in filename or "\\" in filename
@@ -62,19 +67,22 @@ def read_document(filename: str):
 
 
 @protected.post("/chat/stream")
-def chat_stream(request: ChatRequest, http: Request,user=CurrentUser, db=DB):
+async def chat_stream(request: ChatRequest, http: Request, user=CurrentUser, db=DB):
 
     if not request.question.strip():
         raise HTTPException(status_code=422, detail="Question cannot be blank")
-    if not save_chat_if_needed(db, request.chat_id, user["id"], request.question):
+    if not await asyncio.to_thread(save_chat_if_needed, db, request.chat_id, user["id"], request.question):
         raise HTTPException(status_code=404, detail="Chat not found")
-    db.commit()
+    await asyncio.to_thread(db.commit)
 
     rag_app = http.app.state.rag_app
 
-    def events():
+    async def events():
         try:
-            for kind, payload in stream_answer(rag_app, user["id"], str(request.chat_id), request.question):
+            async for kind, payload in stream_answer(rag_app, user["id"], str(request.chat_id), request.question):
+                if await http.is_disconnected():
+                    logger.info(f"Client disconnected early from chat {request.chat_id}")
+                    break
                 if kind == "token":
                     yield sse(payload)
                 else:
@@ -90,38 +98,39 @@ def chat_stream(request: ChatRequest, http: Request,user=CurrentUser, db=DB):
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
-@protected.get("/chats/{chat_id}/messages")
-def chat_messages(chat_id: UUID, http: Request,user=CurrentUser, db=DB):
 
-    if not owns_chat(db, chat_id, user["id"]):
+@protected.get("/chats/{chat_id}/messages")
+async def chat_messages(chat_id: UUID, http: Request, user=CurrentUser, db=DB):
+
+    if not await asyncio.to_thread(owns_chat, db, chat_id, user["id"]):
         raise HTTPException(status_code=404, detail="Chat not found")
 
-    state = http.app.state.rag_app.get_state(make_config(user["id"], str(chat_id)))
-    
+    state = await http.app.state.rag_app.aget_state(make_config(user["id"], str(chat_id)))
+
     history = []
 
-    for msg in state.values.get("messages",[]):
+    for msg in state.values.get("messages", []):
         if msg.type not in ("human", "ai") or not msg.content:
             continue
-      
-        history.append(
-            {"role":"user" if msg.type == "human" else "assistant", "content": msg.content}
 
+        history.append(
+            {"role": "user" if msg.type == "human" else "assistant", "content": msg.content}
         )
-        
+
     return history
+
 
 VAULT_BASE_DIR = Path("user_data/data_vault")
 
-@protected.post("/upload_documents/",response_model=UploadResponse)
-def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB):
-    MAX_FILES = 5   
+
+@protected.post("/upload_documents/", response_model=UploadResponse)
+async def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB):
+    MAX_FILES = 5
     MAX_SIZE = 20 * 1024 * 1024  # 20 MB
     MAGIC = {".pdf": b"%PDF-", ".docx": b"PK"}
 
     if len(files) > MAX_FILES:
         raise HTTPException(400, f"Maximum {MAX_FILES} files allowed per upload.")
-
 
     folder = VAULT_BASE_DIR / str(user["id"])
     folder.mkdir(parents=True, exist_ok=True)
@@ -137,7 +146,7 @@ def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB
             failed.append(f"{name} (unsupported format)")
             continue
 
-        content = file.file.read(MAX_SIZE + 1)
+        content = await file.read(MAX_SIZE + 1)
         if len(content) > MAX_SIZE:
             failed.append(f"{name} (exceeds 20 MB)")
             continue
@@ -150,10 +159,10 @@ def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB
 
         # Per-document atomic processing
         try:
-            with open(path, "wb") as f:
-                f.write(content)
+            await asyncio.to_thread(path.write_bytes, content)
 
-            saved_name = savefiles_metadata_in_db(
+            saved_name = await asyncio.to_thread(
+                savefiles_metadata_in_db,
                 db=db,
                 user_id=user["id"],
                 file_content={
@@ -165,16 +174,18 @@ def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB
             )
 
             # Ingest, chunk, and embed into Chroma vault for this document
-            res = vault.process_and_store(file_path=path, user_id=user["id"], doc_name=saved_name)
+            res = await asyncio.to_thread(
+                vault.process_and_store, file_path=path, user_id=user["id"], doc_name=saved_name
+            )
             if res.get("status") == "error":
                 raise RuntimeError(res.get("message", "Ingestion failed"))
 
             # Commit to database only when disk and Chroma both succeed for this file
-            db.commit()
+            await asyncio.to_thread(db.commit)
             uploaded.append(saved_name)
 
         except Exception as e:
-            db.rollback()
+            await asyncio.to_thread(db.rollback)
             path.unlink(missing_ok=True)
             logger.error(f"Failed processing file '{name}': {e}")
             failed.append(f"{name} (interrupted or failed)")
@@ -190,15 +201,15 @@ def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB
 
 
 @protected.get("/user/documents")
-def get_user_vault_documents(user=CurrentUser, db=DB):
+async def get_user_vault_documents(user=CurrentUser, db=DB):
     """Returns metadata for all documents in the user's personal vault."""
-    return list_user_documents(db, user["id"])
+    return await asyncio.to_thread(list_user_documents, db, user["id"])
 
 
 @protected.get("/user/documents/{doc_id}")
-def stream_user_vault_document(doc_id: str, user=CurrentUser, db=DB):
+async def stream_user_vault_document(doc_id: str, user=CurrentUser, db=DB):
     """Streams a single document on-demand to protect server and client RAM."""
-    doc = get_user_document(db, user["id"], doc_id)
+    doc = await asyncio.to_thread(get_user_document, db, user["id"], doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -252,20 +263,20 @@ def _bg_clear_vault(user_id: int, paths: list[str], folder: Path):
 
 
 @protected.delete("/user/documents/{doc_id}")
-def delete_vault_document(
+async def delete_vault_document(
     doc_id: str,
     background_tasks: BackgroundTasks,
     user=CurrentUser,
     db=DB,
 ):
-    """Deletes metadata from PostgreSQL immediately (<2ms), then cleans Chroma & disk in background."""
-    doc = delete_user_document(db, user["id"], doc_id)
+    """Deletes metadata from PostgreSQL immediately, then cleans Chroma & disk in background."""
+    doc = await asyncio.to_thread(delete_user_document, db, user["id"], doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    db.commit()
+    await asyncio.to_thread(db.commit)
 
-    # Offload heavy vector and file cleanup to background
+    # Sync background functions are run in a thread by Starlette automatically
     background_tasks.add_task(
         _bg_cleanup_document,
         user_id=user["id"],
@@ -277,19 +288,18 @@ def delete_vault_document(
 
 
 @protected.delete("/user/vault")
-def clear_personal_vault(
+async def clear_personal_vault(
     background_tasks: BackgroundTasks,
     user=CurrentUser,
     db=DB,
 ):
-    """Clears all records from PostgreSQL immediately (<5ms), then cleans Chroma & disk in background."""
-    docs = clear_user_vault(db, user["id"])
-    db.commit()
+    """Clears all records from PostgreSQL immediately, then cleans Chroma & disk in background."""
+    docs = await asyncio.to_thread(clear_user_vault, db, user["id"])
+    await asyncio.to_thread(db.commit)
 
     paths = [d["stored_path"] for d in docs]
     folder = VAULT_BASE_DIR / str(user["id"])
 
-    # Offload heavy vector wipe and directory cleanup to background
     background_tasks.add_task(_bg_clear_vault, user_id=user["id"], paths=paths, folder=folder)
 
     return {"message": f"Personal vault cleared ({len(docs)} documents removed)"}

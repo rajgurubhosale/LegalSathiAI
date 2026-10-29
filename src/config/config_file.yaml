@@ -20,24 +20,27 @@ vectorstore:
   db_path: 'D:\LegalSaathi AI\vectorstore_octen_1200'
 
 retrieval:
-  top_n: 40
-  rerank_k: 5
-  min_score: null
-  max_chunks: 4
-
+  top_n: 40        
+  rerank_k: 5      
+  min_score: 0.30  
+  max_chunks: 5    
+  
 rerank:
   model_name: "Qwen/Qwen3-Reranker-0.6B"
 
   
 evaluation:
   threshold: 0.7
+
+  output_dir: 'D:/LegalSaathi AI/src/evalutions/RUN_LATEST_1'  
+  
   dataset_path: 'D:/LegalSaathi AI/src/evalutions/final_evalution_set.csv'
   output_path: 'D:/LegalSaathi AI/src/evalutions/evaluation_results_modernbert/oct_qwen_1200.csv'
   
   
   top_n: 40
   rerank_k: 5
-  min_score: 0.1
+  min_score: 0.30
   gen_workers: 1
   max_concurrent: 5
 

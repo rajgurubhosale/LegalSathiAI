@@ -58,3 +58,5 @@ src/evalutions/final_evalution_set.csv
 /docs/write_timing_comparison.png
 /docs/image.png
 .ruff_cache
+src/evalutions/RUN_LATEST_1
+.tmp_pytest

@@ -3,6 +3,8 @@ from src.genration_pipeline.model import *
 from src.rag_retrieval.retrival import *
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.output_parsers import StrOutputParser
+from src.genration_pipeline.new_prompts import RAG_SYSTEM_PROMPT, SYSTEM_PROMPT
 from itertools import zip_longest
 import json
 from src.genration_pipeline.schemas import *
@@ -24,6 +26,12 @@ class LegalSaathiPipeline:
         self.retriever = Retrieval(top_n=self.top_n)
         self.reranker = Reranker(rerank_k=self.rerank_k)
         self.model = get_model(api_key=groq_api_key)
+        self.prompt = ChatPromptTemplate.from_messages([
+            ("system", RAG_SYSTEM_PROMPT),
+            MessagesPlaceholder("chat_history"),
+            ("human", "Context:\n<context>\n{context}\n</context>\n\nQuestion:\n{question}"),
+        ])
+        self.chain = self.prompt | self.model | StrOutputParser()
 
         self.decomposition_model = self.model.with_structured_output(
             SubQueriesSchema,
@@ -131,11 +139,14 @@ class LegalSaathiPipeline:
         ranked_groups = []
         diagnostics = {"search_queries": search_queries, "queries": []}
         for search_query in search_queries:
-            docs = self.retriever.hybrid_retrieve_invoke(search_query)
             if return_diagnostics:
+                docs, dense_docs, sparse_docs = self.retriever.hybrid_retrieve_invoke(
+                    search_query, return_sources=True
+                )
                 all_ranked = self.reranker.rerank(docs=docs, query=search_query, return_all=True)
                 ranked_docs = all_ranked[:self.rerank_k]
             else:
+                docs = self.retriever.hybrid_retrieve_invoke(search_query)
                 ranked_docs = self.reranker.rerank(docs=docs, query=search_query)
             fallback = False
 
@@ -150,6 +161,8 @@ class LegalSaathiPipeline:
             if return_diagnostics:
                 diagnostics["queries"].append({
                     "query": search_query,
+                    "dense_chunk_ids": [doc.metadata["chunk_id"] for doc in dense_docs],
+                    "bm25_chunk_ids": [doc.metadata["chunk_id"] for doc in sparse_docs],
                     "hybrid_chunk_ids": [doc.metadata["chunk_id"] for doc in docs],
                     "reranked": [
                         {"rank": rank, "chunk_id": doc.metadata["chunk_id"], "score": float(score)}

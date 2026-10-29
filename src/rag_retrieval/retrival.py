@@ -94,7 +94,7 @@ class Retrieval:
             preprocess_func=lambda text: re.findall(r"\w+", text.lower()),
     )
 
-    def hybrid_retrieve_invoke(self, user_query, rrf_k=60):
+    def hybrid_retrieve_invoke(self, user_query, rrf_k=60, return_sources=False):
         try:
             dense_docs = self.retrieve_invoke(user_query)
             sparse_docs = self.bm25_retriever.invoke(user_query)
@@ -120,7 +120,10 @@ class Retrieval:
 
             ranked_keys = sorted(scores, key=scores.get, reverse=True)
 
-            return [documents[key] for key in ranked_keys[:self.top_n]]
+            ranked_docs = [documents[key] for key in ranked_keys[:self.top_n]]
+            if return_sources:
+                return ranked_docs, dense_docs, sparse_docs
+            return ranked_docs
 
         except Exception as e:
             raise MyException(e, sys)

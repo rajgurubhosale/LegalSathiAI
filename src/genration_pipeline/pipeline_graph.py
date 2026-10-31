@@ -2,12 +2,10 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Annotated
 from langchain.agents import AgentState, create_agent
 from langchain.agents.middleware import SummarizationMiddleware
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessageChunk, HumanMessage, ToolMessage
 from langchain_core.runnables import RunnableConfig
-from langchain_core.tools import tool
+from langchain_core.tools import tool, InjectedToolCallId
 from langgraph.types import Command
-from langchain_core.tools import InjectedToolCallId
-from langchain_core.messages import ToolMessage
 from src.genration_pipeline.new_prompts import SYSTEM_PROMPT as AGENT_SYSTEM_PROMPT
 
 SUMMARIZE_AFTER = 20   
@@ -23,7 +21,7 @@ Write only a plain, clear summary. Strictly do NOT use section headers like 'SES
 def collect_sources(old, new):
     if not new:                    # [] = reset for a new question
         return []
-    return (old or []) + new       # several searches in one turn add up
+    return (old or []) + new       # several searches in one turn add up     
 
 
 class LegalState(AgentState):
@@ -100,7 +98,29 @@ def build_agent(pipeline, summarizer, checkpointer=None):
     )
 
 
-# ---------- Ask ----------
+# ---------- Ask & Stream ----------
+async def stream_ask(agent, question: str, session_id: str, user_id: int):
+    """Yields ("token", text) for each token, then ("sources", list)."""
+    config = {
+        "configurable": {"thread_id": session_id, "user_id": user_id},
+        "recursion_limit": 10,
+    }
+    sources = []
+    async for mode, data in agent.astream(
+        {"messages": [HumanMessage(content=question)], "sources": []},
+        config=config,
+        stream_mode=["messages", "values"],
+    ):
+        if mode == "messages":
+            chunk, _ = data
+            if isinstance(chunk, AIMessageChunk) and chunk.content:
+                yield ("token", chunk.content)
+        elif mode == "values":
+            sources = data.get("sources", [])
+
+    yield ("sources", sources)
+
+
 def ask(agent, question: str, session_id: str, user_id: int) -> dict:
     result = agent.invoke(
         {"messages": [HumanMessage(content=question)], "sources": []},  # [] resets sources

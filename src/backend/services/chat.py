@@ -1,35 +1,10 @@
-from langchain_core.messages import AIMessageChunk, HumanMessage
-
-
-def make_config(user_id, chat_id: str) -> dict:
-    return {
-        "configurable": {
-            "thread_id": f"{user_id}:{chat_id}",
-            "user_id": user_id,  
-        }
-    }
+from src.genration_pipeline.pipeline_graph import stream_ask
 
 
 async def stream_answer(rag_app, user_id, chat_id: str, question: str):
     """Yields ("token", text) for each token, then ("sources", list)."""
-
-    config = make_config(user_id, str(chat_id))
-    sources = []
-
-    async for mode, data in rag_app.astream(
-        {"messages": [HumanMessage(content=question)], "sources": []},
-        config,
-        stream_mode=["messages", "values"],
-    ):
-        if mode == "messages":
-            chunk, meta = data
-            if isinstance(chunk, AIMessageChunk) and chunk.content:
-                yield "token", chunk.content
-
-        elif mode == "values":
-            sources = data.get("sources", [])
-
-    yield "sources", sources
+    async for item in stream_ask(rag_app, question, session_id=f"{user_id}:{chat_id}", user_id=user_id):
+        yield item
 
 
 def list_chats(db, user_id):

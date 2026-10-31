@@ -10,12 +10,13 @@ services:
 
     environment:
       LEGALSAATHI_VECTORSTORE_PATH: /app/vectorstore_octen_1200
-    
+      DATABASE_URL: postgresql://postgres:2025@host.docker.internal:5432/legalsathi
+
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')" ]
       interval: 30s
       start_period: 5m
-    
+
     volumes:
       - ./PDF_DATA:/app/PDF_DATA:ro
       - ./vectorstore_octen_1200:/app/vectorstore_octen_1200
@@ -32,7 +33,7 @@ services:
       - "8501:8501"
     environment:
       LEGALSAATHI_API_URL: http://backend:8000
-      
+
     depends_on:
       backend:
         condition: service_healthy

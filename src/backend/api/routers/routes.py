@@ -71,8 +71,10 @@ async def chat_stream(request: ChatRequest, http: Request, user=CurrentUser, db=
 
     if not request.question.strip():
         raise HTTPException(status_code=422, detail="Question cannot be blank")
+
     if not await asyncio.to_thread(save_chat_if_needed, db, request.chat_id, user["id"], request.question):
         raise HTTPException(status_code=404, detail="Chat not found")
+        
     await asyncio.to_thread(db.commit)
 
     rag_app = http.app.state.rag_app

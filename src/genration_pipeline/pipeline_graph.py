@@ -17,11 +17,10 @@ SUMMARY_PROMPT = """You are a conversation summarizer. Summarize the key points,
 </messages>
 Write only a plain, clear summary. Strictly do NOT use section headers like 'SESSION INTENT', 'SUMMARY', or 'ARTIFACTS'."""        
 
-# ---------- State ----------
 def collect_sources(old, new):
-    if not new:                    # [] = reset for a new question
+    if not new:                   
         return []
-    return (old or []) + new       # several searches in one turn add up     
+    return (old or []) + new       
 
 
 class LegalState(AgentState):
@@ -79,7 +78,6 @@ def create_search_tool(pipeline):
     return search_legal_documents
 
 
-# ---------- Agent (build ONCE at startup) ----------
 def build_agent(pipeline, summarizer, checkpointer=None):
     return create_agent(
         model=pipeline.model,
@@ -98,7 +96,6 @@ def build_agent(pipeline, summarizer, checkpointer=None):
     )
 
 
-# ---------- Ask & Stream ----------
 async def stream_ask(agent, question: str, session_id: str, user_id: int):
     """Yields ("token", text) for each token, then ("sources", list)."""
     config = {
@@ -131,9 +128,8 @@ def ask(agent, question: str, session_id: str, user_id: int) -> dict:
     )
     return {
         "answer": result["messages"][-1].content,
-        "sources": result.get("sources", []),  # [] when the agent never searched
+        "sources": result.get("sources", []),  
     }
 
 
-# Backward-compatible alias
 build_graph = build_agent

@@ -16,3 +16,6 @@ if len(SECRET_KEY) < 32:
 DATABASE_URL = os.environ["DATABASE_URL"].strip()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_MINUTES = 30
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+PDF_DIR = PROJECT_ROOT / "PDF_DATA"
+PDF_ROOT = PDF_DIR.resolve()

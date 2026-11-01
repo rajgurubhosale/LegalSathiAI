@@ -3,7 +3,7 @@ from typing import Annotated
 import jwt
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
-from psycopg import Connection
+from psycopg import AsyncConnection
 
 from src.backend.core.config import SECRET_KEY, ALGORITHM
 from src.backend.db.session import get_db
@@ -15,7 +15,10 @@ def get_pipeline(request: Request) -> LegalSaathiPipeline:
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],db: Annotated[Connection, Depends(get_db)],) -> dict:
+DB = Annotated[AsyncConnection , Depends(get_db)]
+ 
+
+async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db:DB) -> dict:
     """ validate the token and user account return user info """
     error = HTTPException(status.HTTP_401_UNAUTHORIZED,"Could not validate credentials",headers={"WWW-Authenticate": "Bearer"},)
 
@@ -36,16 +39,14 @@ def get_current_user(token: Annotated[str, Depends(oauth2_scheme)],db: Annotated
     except (jwt.InvalidTokenError, KeyError, ValueError):
         raise error
 
-    user = get_user_by_id(db, user_id)
+    user = await get_user_by_id(db, user_id)
 
     if not user or not user["is_active"]:
         raise error
     return user
 
-
-
 CurrentUser = Annotated[dict, Depends(get_current_user)]
-DB = Annotated[Connection, Depends(get_db)]
+
 
 def require_role(*roles: str):
     def checker(user: CurrentUser) -> dict:
@@ -53,7 +54,3 @@ def require_role(*roles: str):
             raise HTTPException(status.HTTP_403_FORBIDDEN, "Not enough permissions")
         return user
     return checker
-
-
-
-

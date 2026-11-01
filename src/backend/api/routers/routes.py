@@ -7,7 +7,7 @@ from fastapi import (
     UploadFile, status
 )
 from fastapi.responses import FileResponse, StreamingResponse
-
+from src.backend.core.config import PDF_DIR
 from src.backend.api.dependencies import CurrentUser, DB, get_current_user
 from src.backend.api.schemas import ChatRequest, UploadResponse
 from src.backend.api.sse import sse
@@ -21,8 +21,8 @@ from src.backend.services.chat import (
 )
 from src.backend.services.vault import UserVault
 from src.logger import logger
+from src.backend.core.config import PDF_ROOT
 
-PDF_DIR = Path(__file__).resolve().parents[4] / "PDF_DATA"
 
 router = APIRouter()                                              # public
 protected = APIRouter(dependencies=[Depends(get_current_user)])   # needs a token
@@ -45,7 +45,7 @@ async def documents():
 
 @protected.get("/chats")
 async def recent_chats(user=Depends(get_current_user), db=DB):
-    return await asyncio.to_thread(list_chats, db, user["id"])
+    return await list_chats(db, user["id"])
 
 
 @protected.post("/chats/draft")
@@ -55,15 +55,13 @@ async def new_chat_draft():
 
 @protected.get("/documents/{filename}")
 async def read_document(filename: str):
-    document = (PDF_DIR / filename).resolve()
-    if (
-        "/" in filename or "\\" in filename
-        or document.parent != PDF_DIR.resolve()
-        or document.suffix.lower() != ".pdf"
-        or not document.is_file()
-    ):
+    
+    document_path = (PDF_ROOT / filename).resolve()
+
+    if document_path.parent != PDF_ROOT or document_path.suffix.lower() != ".pdf" or not document_path.is_file():
         raise HTTPException(status_code=404, detail="Document not found")
-    return FileResponse(document, media_type="application/pdf", filename=filename, content_disposition_type="inline")
+        
+    return FileResponse(document_path, media_type="application/pdf", filename=filename, content_disposition_type="inline")
 
 
 @protected.post("/chat/stream")
@@ -72,10 +70,10 @@ async def chat_stream(request: ChatRequest, http: Request, user=CurrentUser, db=
     if not request.question.strip():
         raise HTTPException(status_code=422, detail="Question cannot be blank")
 
-    if not await asyncio.to_thread(save_chat_if_needed, db, request.chat_id, user["id"], request.question):
+    if not await save_chat_if_needed(db, request.chat_id, user["id"], request.question):
         raise HTTPException(status_code=404, detail="Chat not found")
         
-    await asyncio.to_thread(db.commit)
+    await db.commit()
 
     rag_app = http.app.state.rag_app
 
@@ -104,7 +102,7 @@ async def chat_stream(request: ChatRequest, http: Request, user=CurrentUser, db=
 @protected.get("/chats/{chat_id}/messages")
 async def chat_messages(chat_id: UUID, http: Request, user=CurrentUser, db=DB):
 
-    if not await asyncio.to_thread(owns_chat, db, chat_id, user["id"]):
+    if not await owns_chat(db, chat_id, user["id"]):
         raise HTTPException(status_code=404, detail="Chat not found")
 
     state = await http.app.state.rag_app.aget_state(make_config(user["id"], str(chat_id)))
@@ -126,7 +124,7 @@ VAULT_BASE_DIR = Path("user_data/data_vault")
 
 
 @protected.post("/upload_documents/", response_model=UploadResponse)
-async def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB):
+async def upload_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB):
     MAX_FILES = 5
     MAX_SIZE = 20 * 1024 * 1024  # 20 MB
     MAGIC = {".pdf": b"%PDF-", ".docx": b"PK"}
@@ -163,8 +161,7 @@ async def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser,
         try:
             await asyncio.to_thread(path.write_bytes, content)
 
-            saved_name = await asyncio.to_thread(
-                savefiles_metadata_in_db,
+            saved_name = await savefiles_metadata_in_db(
                 db=db,
                 user_id=user["id"],
                 file_content={
@@ -172,8 +169,8 @@ async def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser,
                     "stored_path": str(path),
                     "file_size": len(content),
                     "file_type": ext.lstrip("."),
-                },
-            )
+                },)
+            
 
             # Ingest, chunk, and embed into Chroma vault for this document
             res = await asyncio.to_thread(
@@ -183,11 +180,11 @@ async def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser,
                 raise RuntimeError(res.get("message", "Ingestion failed"))
 
             # Commit to database only when disk and Chroma both succeed for this file
-            await asyncio.to_thread(db.commit)
+            await db.commit()
             uploaded.append(saved_name)
 
         except Exception as e:
-            await asyncio.to_thread(db.rollback)
+            await db.rollback()
             path.unlink(missing_ok=True)
             logger.error(f"Failed processing file '{name}': {e}")
             failed.append(f"{name} (interrupted or failed)")
@@ -205,13 +202,14 @@ async def uplod_documents(files: list[UploadFile] = File(...), user=CurrentUser,
 @protected.get("/user/documents")
 async def get_user_vault_documents(user=CurrentUser, db=DB):
     """Returns metadata for all documents in the user's personal vault."""
-    return await asyncio.to_thread(list_user_documents, db, user["id"])
+    return await list_user_documents(db, user["id"])
 
 
 @protected.get("/user/documents/{doc_id}")
 async def stream_user_vault_document(doc_id: str, user=CurrentUser, db=DB):
     """Streams a single document on-demand to protect server and client RAM."""
-    doc = await asyncio.to_thread(get_user_document, db, user["id"], doc_id)
+    doc = await get_user_document(db, user["id"], doc_id)
+    
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -272,11 +270,11 @@ async def delete_vault_document(
     db=DB,
 ):
     """Deletes metadata from PostgreSQL immediately, then cleans Chroma & disk in background."""
-    doc = await asyncio.to_thread(delete_user_document, db, user["id"], doc_id)
+    doc = await delete_user_document(db, user["id"], doc_id)
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
 
-    await asyncio.to_thread(db.commit)
+    await db.commit()
 
     # Sync background functions are run in a thread by Starlette automatically
     background_tasks.add_task(
@@ -296,8 +294,8 @@ async def clear_personal_vault(
     db=DB,
 ):
     """Clears all records from PostgreSQL immediately, then cleans Chroma & disk in background."""
-    docs = await asyncio.to_thread(clear_user_vault, db, user["id"])
-    await asyncio.to_thread(db.commit)
+    docs = await clear_user_vault(db, user["id"])
+    await db.commit()
 
     paths = [d["stored_path"] for d in docs]
     folder = VAULT_BASE_DIR / str(user["id"])

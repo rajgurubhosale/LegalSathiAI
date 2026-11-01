@@ -19,7 +19,7 @@ from src.backend.services.vault import UserVault
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    pool.open(wait=True)
+    await pool.open(wait=True)
     try:
         pipeline = LegalSaathiPipeline()
         pipeline.vault = UserVault(embedding_model=pipeline.retriever.embedding_model)  
@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
             logger.info("LegalSaathi API is ready.")
             yield
     finally:
-        pool.close()
+        await pool.close()
 
 
 app = FastAPI(title="legal-sathi-api", lifespan=lifespan)

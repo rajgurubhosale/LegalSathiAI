@@ -187,6 +187,17 @@ class UserVault:
             filter={"user_id": user_id},
         )
 
+    async def asearch(self, query: str, user_id: int, k: int = 8):
+        """Asynchronously searches Chroma filtered strictly by user_id."""
+        if self.store._collection.count() == 0:
+            return []
+            
+        return await self.store.asimilarity_search(
+            query=query,
+            k=k,
+            filter={"user_id": user_id},
+        )
+
     def delete_document(self, user_id: int, doc_name: str) -> int:
         """Deletes all chunks belonging to a specific document for a user from ChromaDB."""
         if self.store._collection.count() == 0:

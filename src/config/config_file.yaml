@@ -22,13 +22,10 @@ vectorstore:
 retrieval:
   top_n: 40        
   rerank_k: 5      
-  min_score: 0.30  
-  max_chunks: 5    
-  
+  min_score: 0.30   
+    
 rerank:
   model_name: "Qwen/Qwen3-Reranker-0.6B"
-
-  
 evaluation:
   threshold: 0.7
 

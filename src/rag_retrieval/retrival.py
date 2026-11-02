@@ -1,5 +1,6 @@
 
 import sys
+import torch
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from src.exception import MyException
@@ -8,9 +9,8 @@ from src.utils.main_utils import read_config_file
 from pathlib import Path
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
-import torch
-
 import re
+from langchain_classic.retrievers import EnsembleRetriever
 from langchain_community.retrievers import BM25Retriever
 from langchain_core.documents import Document
 
@@ -18,13 +18,12 @@ load_dotenv()
 
 class Retrieval:
 
-    def __init__(self, top_n=10):
+    def __init__(self,top_n):
         try:      
 
             self.config = read_config_file()
+            
             self.top_n  = top_n
-
-
             self.embedding_model = self._load_model()
             self.vectorstore = self._load_vector_db()
             
@@ -33,6 +32,11 @@ class Retrieval:
             )
             self.bm25_retriever = self._load_bm25_retriever()
 
+            self.hybrid_retriever = EnsembleRetriever(
+                retrievers=[self.retriever, self.bm25_retriever],
+                weights=[0.5, 0.5], 
+                c=60,                
+            )
       
         except Exception as e:
             raise MyException(e,sys)        
@@ -94,39 +98,10 @@ class Retrieval:
             preprocess_func=lambda text: re.findall(r"\w+", text.lower()),
     )
 
-    def hybrid_retrieve_invoke(self, user_query, rrf_k=60, return_sources=False):
-        try:
-            dense_docs = self.retrieve_invoke(user_query)
-            sparse_docs = self.bm25_retriever.invoke(user_query)
+    def hybrid_retrieve_invoke(self, user_query):
 
-            scores = {}
-            documents = {}
+        return self.hybrid_retriever.invoke(user_query)[:self.top_n]
 
-            for results in (dense_docs, sparse_docs):
-                seen = set()
-
-                for rank, doc in enumerate(results, 1):
-                    key = (
-                        doc.metadata.get("act_name"),
-                        doc.metadata.get("chunk_id") or doc.page_content,
-                    )
-
-                    if key in seen:
-                        continue
-                    seen.add(key)
-
-                    scores[key] = scores.get(key, 0) + 1 / (rrf_k + rank)
-                    documents[key] = doc
-
-            ranked_keys = sorted(scores, key=scores.get, reverse=True)
-
-            ranked_docs = [documents[key] for key in ranked_keys[:self.top_n]]
-            if return_sources:
-                return ranked_docs, dense_docs, sparse_docs
-            return ranked_docs
-
-        except Exception as e:
-            raise MyException(e, sys)
         
     def retrieve_invoke(self,user_query):
         try: 
@@ -137,11 +112,12 @@ class Retrieval:
         
 class Reranker:
     
-    def __init__(self,rerank_k:int):
+    def __init__(self, rerank_k: int = 5, min_score: float | None = None):
         self.config = read_config_file()
         self.rerank_k = rerank_k
         self.reranker_model = self._load_reranker_model()
-    
+        self.min_score  = min_score
+
     def warmup(self) -> None:
         try:
             logger.info("Warming up reranker")
@@ -151,25 +127,23 @@ class Reranker:
             raise MyException(e, sys)
 
     def _load_reranker_model(self):
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         return HuggingFaceCrossEncoder(
-                model_name=self.config["rerank"]["model_name"],
-                model_kwargs={
-                    "device": "cuda" if torch.cuda.is_available() else "cpu",
-                },
-            )
+            model_name=self.config["rerank"]["model_name"],
+            model_kwargs={"device": device},
+        )
+        
     
-    
-    def rerank(self, docs: list, query: str, return_all: bool = False) -> list:
+    def rerank(self, docs: list, query: str) -> list:
+
         if not docs:
             return []
 
-        pairs = [
-            (
-                query,
-                f"Act: {doc.metadata.get('act_name', 'Unknown')}\n{doc.page_content}",
-            )
-            for doc in docs
-        ]
+
+        pairs = [(query,
+                f"Act: {doc.metadata.get('act_name', 'Unknown')}\n{doc.page_content}",)
+                for doc in docs]
+
 
         predictions = self.reranker_model.client.predict(
             pairs,
@@ -182,4 +156,8 @@ class Reranker:
             reverse=True,
         )
 
-        return scored if return_all else scored[:self.rerank_k]
+        if self.min_score:
+            passing = [item for item in scored if item[0] >= self.min_score]
+            scored = passing or scored[:2]
+
+        return scored[: self.rerank_k]

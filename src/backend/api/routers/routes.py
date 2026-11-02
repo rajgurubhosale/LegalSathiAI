@@ -44,7 +44,7 @@ async def documents():
 
 
 @protected.get("/chats")
-async def recent_chats(user=Depends(get_current_user), db=DB):
+async def recent_chats(user:CurrentUser, db:DB):
     return await list_chats(db, user["id"])
 
 
@@ -65,7 +65,7 @@ async def read_document(filename: str):
 
 
 @protected.post("/chat/stream")
-async def chat_stream(request: ChatRequest, http: Request, user=CurrentUser, db=DB):
+async def chat_stream(request: ChatRequest, http: Request, user: CurrentUser, db: DB):
 
     if not request.question.strip():
         raise HTTPException(status_code=422, detail="Question cannot be blank")
@@ -100,7 +100,7 @@ async def chat_stream(request: ChatRequest, http: Request, user=CurrentUser, db=
 
 
 @protected.get("/chats/{chat_id}/messages")
-async def chat_messages(chat_id: UUID, http: Request, user=CurrentUser, db=DB):
+async def chat_messages(chat_id: UUID, http: Request, user: CurrentUser, db: DB):
 
     if not await owns_chat(db, chat_id, user["id"]):
         raise HTTPException(status_code=404, detail="Chat not found")
@@ -124,7 +124,8 @@ VAULT_BASE_DIR = Path("user_data/data_vault")
 
 
 @protected.post("/upload_documents/", response_model=UploadResponse)
-async def upload_documents(files: list[UploadFile] = File(...), user=CurrentUser, db=DB):
+async def upload_documents(user: CurrentUser, db: DB, files: list[UploadFile] = File(...)):
+
     MAX_FILES = 5
     MAX_SIZE = 20 * 1024 * 1024  # 20 MB
     MAGIC = {".pdf": b"%PDF-", ".docx": b"PK"}
@@ -157,7 +158,6 @@ async def upload_documents(files: list[UploadFile] = File(...), user=CurrentUser
 
         path = folder / f"{uuid4().hex}{ext}"
 
-        # Per-document atomic processing
         try:
             await asyncio.to_thread(path.write_bytes, content)
 
@@ -172,14 +172,12 @@ async def upload_documents(files: list[UploadFile] = File(...), user=CurrentUser
                 },)
             
 
-            # Ingest, chunk, and embed into Chroma vault for this document
             res = await asyncio.to_thread(
                 vault.process_and_store, file_path=path, user_id=user["id"], doc_name=saved_name
             )
             if res.get("status") == "error":
                 raise RuntimeError(res.get("message", "Ingestion failed"))
 
-            # Commit to database only when disk and Chroma both succeed for this file
             await db.commit()
             uploaded.append(saved_name)
 
@@ -200,13 +198,13 @@ async def upload_documents(files: list[UploadFile] = File(...), user=CurrentUser
 
 
 @protected.get("/user/documents")
-async def get_user_vault_documents(user=CurrentUser, db=DB):
+async def get_user_vault_documents(user: CurrentUser, db: DB):
     """Returns metadata for all documents in the user's personal vault."""
     return await list_user_documents(db, user["id"])
 
 
 @protected.get("/user/documents/{doc_id}")
-async def stream_user_vault_document(doc_id: str, user=CurrentUser, db=DB):
+async def stream_user_vault_document(doc_id: str, user: CurrentUser, db: DB):
     """Streams a single document on-demand to protect server and client RAM."""
     doc = await get_user_document(db, user["id"], doc_id)
     
@@ -266,8 +264,8 @@ def _bg_clear_vault(user_id: int, paths: list[str], folder: Path):
 async def delete_vault_document(
     doc_id: str,
     background_tasks: BackgroundTasks,
-    user=CurrentUser,
-    db=DB,
+    user:CurrentUser,
+    db:DB,
 ):
     """Deletes metadata from PostgreSQL immediately, then cleans Chroma & disk in background."""
     doc = await delete_user_document(db, user["id"], doc_id)
@@ -290,8 +288,8 @@ async def delete_vault_document(
 @protected.delete("/user/vault")
 async def clear_personal_vault(
     background_tasks: BackgroundTasks,
-    user=CurrentUser,
-    db=DB,
+    user:CurrentUser,
+    db:DB,
 ):
     """Clears all records from PostgreSQL immediately, then cleans Chroma & disk in background."""
     docs = await clear_user_vault(db, user["id"])

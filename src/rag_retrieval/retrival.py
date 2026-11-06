@@ -1,4 +1,3 @@
-
 import sys
 import torch
 from dotenv import load_dotenv
@@ -128,10 +127,13 @@ class Reranker:
 
     def _load_reranker_model(self):
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        return HuggingFaceCrossEncoder(
+        model = HuggingFaceCrossEncoder(
             model_name=self.config["rerank"]["model_name"],
             model_kwargs={"device": device},
         )
+        if device == "cuda":
+            model.client.model.half()
+        return model
         
     
     def rerank(self, docs: list, query: str) -> list:
@@ -139,11 +141,9 @@ class Reranker:
         if not docs:
             return []
 
-
         pairs = [(query,
                 f"Act: {doc.metadata.get('act_name', 'Unknown')}\n{doc.page_content}",)
                 for doc in docs]
-
 
         predictions = self.reranker_model.client.predict(
             pairs,
@@ -155,9 +155,12 @@ class Reranker:
             key=lambda item: item[0],
             reverse=True,
         )
+        
+        top_k = scored[: self.rerank_k]
 
         if self.min_score:
-            passing = [item for item in scored if item[0] >= self.min_score]
-            scored = passing or scored[:2]
+            passing = [item for item in top_k if item[0] >= self.min_score]
+            return passing or top_k[:2]
 
-        return scored[: self.rerank_k]
+        return top_k
+

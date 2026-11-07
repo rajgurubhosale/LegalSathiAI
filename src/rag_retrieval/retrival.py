@@ -53,6 +53,7 @@ class Retrieval:
 
         return HuggingFaceEmbeddings(
             model_name=self.config["embedding"]["model_name"],
+            model_kwargs={"device": "cpu"},
             encode_kwargs={"normalize_embeddings": True},
         )
 
@@ -147,7 +148,7 @@ class Reranker:
 
         predictions = self.reranker_model.client.predict(
             pairs,
-            batch_size=16,
+            batch_size=20,
         )
 
         scored = sorted(

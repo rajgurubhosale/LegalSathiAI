@@ -1,30 +1,41 @@
+from langchain_openai import ChatOpenAI
 from langchain_groq import ChatGroq
-
 from dotenv import load_dotenv
 import os
-from .schemas import RouteDecision
 
 load_dotenv()
 
+MESH_KEY = os.getenv("MESH_API_KEY")
+MESH_BASE_URL = "https://api.meshapi.ai/v1"
 
-def get_model(model: str = "openai/gpt-oss-120b", temperature: float = 0, api_key: str | None = None):
-    api_key = api_key or os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY not found in environment and no api_key passed.")
 
-    return ChatGroq(
-        model=model,
-        api_key=api_key,
+def get_model_meshapi(
+    model_name: str = "google/gemini-2.5-flash-lite",
+    temperature: float = 0.0,
+    api_key: str | None = None,
+):
+    key = api_key or MESH_KEY
+    return ChatOpenAI(
+        model=model_name,
+        api_key=key,
+        base_url=MESH_BASE_URL,
         temperature=temperature,
-        timeout=60,
-        max_retries=5,
+        streaming=True,
     )
 
-GROQ_KEY = os.environ.get("DECISION_GROQ_KEY")
 
-summarizer = ChatGroq(model="openai/gpt-oss-20b", api_key=GROQ_KEY, temperature=0.0,max_tokens=300)
-decision_model = ChatGroq(model="openai/gpt-oss-20b", api_key=GROQ_KEY, temperature=0.0)
-chit_chat_model = ChatGroq(model="openai/gpt-oss-20b", api_key=GROQ_KEY, temperature=0.2)
+def get_model(temperature: float = 0, api_key: str | None = None):
+    return get_model_meshapi(temperature=temperature, api_key=api_key)
 
 
-router = decision_model.with_structured_output(RouteDecision)
+summarizer = get_model_meshapi(model_name="google/gemini-2.5-flash-lite", temperature=0.0)
+
+chit_chat_model = get_model_meshapi(model_name="google/gemini-2.5-flash-lite", temperature=0.2)
+
+from typesafe_sdk import Choice, TypeSafeClient
+amos_client = TypeSafeClient(
+    base_url="https://api.amos.scira.ai",
+    api_key="amos",  
+    model="amos-1-medium",
+
+)

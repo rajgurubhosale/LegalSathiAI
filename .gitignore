@@ -48,6 +48,7 @@ src/evalutions/final_evalution_set.csv
 # Local images and notes
 /image.png
 /write_timing_comparison.png
+.venv_old
 /project_data.md
 /tradeoffs.md
 /Untitled Diagram (1).drawio
@@ -57,6 +58,7 @@ LegalSaathi_Master_Interview_Playbook.md
 NEW.md
 # Local documentation artifacts
 /docs/project_data.md
+src/latency_evaluation/
 /docs/write_timing_comparison.png
 /docs/image.png
 .ruff_cache

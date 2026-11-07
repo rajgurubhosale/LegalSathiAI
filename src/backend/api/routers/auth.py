@@ -13,6 +13,7 @@ from src.backend.db.users import create_user, get_user_by_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 Form =  Annotated[OAuth2PasswordRequestForm, Depends()]
+
 @router.post("/register", response_model=UserOut, status_code=201)
 async def register(data: UserCreate, db: DB):
     try:

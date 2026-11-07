@@ -99,21 +99,24 @@ Benchmarked using **DeepEval** (`deepseek-v4-flash` judge, `groq` generator) on 
 | **LLM Judge** | **Contextual Recall** | **0.881** | Complete statutory evidence retrieved for 38 of 45 questions |
 | **LLM Judge** | **Contextual Relevancy** | **0.365** | Complete 1,200-char statutory sections preserved to prevent legal distortion |
 
-### ⏱️ Retrieval Pipeline Stage Profiling
+### ⏱️ Production End-to-End Latency Benchmark (15 Empirical Statutory Queries)
 
-Benchmarked over 45 statutory queries on **NVIDIA RTX 4050 Laptop GPU (6 GB VRAM) + Intel Core 5 210H + 24 GB RAM**:
+Evaluated on **NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM) + Intel Core + 24 GB RAM** across 15 real-world multi-part Indian statutory questions:
 
-| Stage | Hardware | Avg. Latency (ms) | Share (%) |
-|---|:---:|:---:|:---:|
-| **1. Dense Search** (`Octen-0.6B`) | GPU (RTX 4050) | 315.1 ms | 30.2% |
-| **2. BM25 Lexical Search** | CPU / RAM | 57.1 ms | 5.5% |
-| **3. RRF Fusion & Deduplication** | CPU | 0.1 ms | < 0.1% |
-| **4. Qwen3 Cross-Encoder Reranker** | GPU (RTX 4050) | 671.7 ms | 64.3% |
-| **Total Retrieval Pipeline** | **Local Hardware** | **1,044.0 ms** | **100.0%** |
+| Pipeline Stage | Implementation | Mean (Avg) | P50 (Median) | P95 (Tail) |
+|---|:---:|:---:|:---:|:---:|
+| **1. Router** | `Amos-1 Decision Model` | 284.0 ms | 281.7 ms | 299.8 ms |
+| **2. Dense Retrieval** | `Octen-Embedding-0.6B` | 548.8 ms | 351.0 ms | 1,098.0 ms |
+| **3. Lexical Search** | `BM25 (Rank-BM25)` | 86.7 ms | 67.2 ms | 180.7 ms |
+| **4. Cross-Encoder Reranker** | `Qwen3-Reranker-0.6B (GPU)` | 2,389.0 ms | 2,262.0 ms | 2,936.0 ms |
+| **5. Time to First Token (TTFT)** | **End-to-End Stream Start** | **3,957.0 ms** | **3,943.0 ms** | **4,866.0 ms** |
+| **6. Total Response Latency** | **Full Answer Streamed** | **4,524.0 ms** | **4,348.0 ms** | **6,204.0 ms** |
 
-> 🔍 **Engineering Trade-off & Optimization:**
-> * **The Trade-off:** The Qwen3 reranker adds **672 ms** (64% of local retrieval), increasing latency from 372 ms to 1,044 ms, but boosts Hit Rate @ 5 by **+45.4%** (from **52.3% to 97.7%**) an essential trade-off where citing the wrong legal section is unacceptable.
-> * **Roadmap:** Converting the reranker to **ONNX Runtime with  quantization** is our top priority to compress model size and cut latency under 200 ms.
+> 💾 **Hardware & Resource Stability:**
+> * **Peak GPU VRAM:** `2,530.3 MB` (~42% of 6 GB VRAM capacity — eliminating Windows PCIe shared memory thrashing).
+> * **Peak System RAM:** `3,994.1 MB`.
+> * **True LLM Generation TTFT:** ~650 ms from retrieval completion to first streaming token.
+> * **Engineering Trade-off:** The Qwen3 cross-encoder reranker accounts for ~52% of total pipeline latency, but boosts Hit Rate @ 5 from 52.3% to **97.7%**, an essential safeguard against legal hallucinations.
 
 ---
 

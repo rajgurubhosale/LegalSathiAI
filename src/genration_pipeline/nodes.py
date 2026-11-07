@@ -11,7 +11,9 @@ from .prompts import (
     SUMMARY_PROMPT, 
     RAG_SYSTEM_PROMPT 
 )
-from .model import router, chit_chat_model, summarizer 
+
+from .model import amos_client, chit_chat_model, summarizer 
+from typesafe_sdk import Choice,TypeSafeClient
 
 SUMMARIZE_AFTER = 20
 KEEP_RECENT = 8
@@ -21,17 +23,43 @@ class LegalState(TypedDict):
     route_decision: Literal["guardrail", "chit_chat", "rag_retrieval"]
     sources: List[dict]
     
-async def decision_node(state: LegalState):
-    user_message = state["messages"][-1].content
-    decision = await router.ainvoke([
-        ("system", DECISION_MODEL_PROMPT),
-        ("human", user_message),
-        ])  
-        
-    route_decision = decision.destination
-    
 
-    return {"route_decision": route_decision}
+
+
+async def decision_node(state: LegalState):
+    user_query = state["messages"][-1].content
+    result = amos_client.system_one(
+        state=f"User query in Indian Legal Assistant: \"{user_query}\"",
+        questions={
+            "route": Choice(
+               instructions=(
+                    "Classify this message for LegalSaathi, an Indian Legal Assistant (BNS, BNSS, BSA, Labour Codes, RTI, Contracts). "
+                    "1. Asking ABOUT a crime, penalty, section, or citizen right is strictly 'rag_retrieval'. "
+                    "2. Flag 'guardrail' ONLY if the user asks HOW TO commit fraud, forge documents, destroy evidence, or evade police. "
+                    "3. Short legal follow-ups (e.g., 'what about bail?', 'and penalty for second offence?') belong to 'rag_retrieval'. "
+                    "4. If in doubt or borderline between casual conversation and a legal issue, always favor 'rag_retrieval'."
+                ),
+                criteria={
+                    "rag_retrieval": (
+                        "Legal questions, laws (BNS, Labour Codes, RTI, Contracts), rights, "
+                        "punishments, court procedures, or questions on uploaded documents."
+                    ),
+                    "chit_chat": (
+                        "Greetings (hi, hello), small talk, 'who are you', compliments, "
+                        "or questions about what the assistant can do."
+                    ),
+                    "guardrail": (
+                        "Instructions or requests for help to commit fraud, forge documents, "
+                        "evade police, hack, or harm someone."
+                    ),
+                },
+            )
+        },
+    )
+    route_obj = result.answers['route']
+    
+    return {"route_decision": route_obj.choice}
+    
 
 
 async def chit_chat_node(state: LegalState):
